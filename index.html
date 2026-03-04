@@ -176,7 +176,6 @@
     <div class="page" id="page-config">
       <div class="stitle">Configuración</div>
       <div class="cfg">
-        <div><div class="clbl">Anthropic API Key</div><input class="cinp" id="cak" type="password" placeholder="sk-ant-..."/></div>
         <div><div class="clbl">Binance API Key</div><input class="cinp" id="cbk" type="password" placeholder="tu key..."/></div>
         <div><div class="clbl">Binance Secret</div><input class="cinp" id="cbs" type="password" placeholder="tu secret..."/></div>
         <div><div class="clbl">CryptoPanic Key</div><input class="cinp" id="ccp" type="text" placeholder="cryptopanic.com (gratis)"/></div>
@@ -200,6 +199,11 @@
 </div>
 <div class="dov" id="dov" onclick="cld(event)"><div class="dsh"><div class="dhdl"></div><div id="dc"></div></div></div>
 <script>
+// ============================================================
+// CLOUDFLARE WORKER PROXY — API Key guardada de forma segura
+// ============================================================
+const CLAUDE_PROXY = 'https://solitary-forest-949f.1111davidh.workers.dev';
+
 const FT=[
   {t:'PLTR',n:'Palantir Technologies',s:'AI / Data Analytics',c:'#c77dff',y:'+340%',d:'Líder en software de análisis de datos para gobierno y empresas. Revenue comercial US creció 121%. Proyección de +47% para 2026.'},
   {t:'NVDA',n:'NVIDIA Corporation',s:'Semiconductores / AI',c:'#00ff88',y:'+171%',d:'Motor del boom de IA. Revenue creció 62% YoY. Domina GPUs para centros de datos con +80% market share.'},
@@ -243,7 +247,7 @@ const T30=[
   {r:30,t:'GOOGL',n:'Alphabet Inc.',p:'+36%',s:'Search/AI'},
 ];
 const CRS=[{sym:'BTCUSDT',n:'Bitcoin',s:'BTC'},{sym:'ETHUSDT',n:'Ethereum',s:'ETH'},{sym:'SOLUSDT',n:'Solana',s:'SOL'},{sym:'BNBUSDT',n:'BNB',s:'BNB'},{sym:'XRPUSDT',n:'XRP',s:'XRP'},{sym:'ADAUSDT',n:'Cardano',s:'ADA'}];
-const ST={config:{ak:'',capital:100,mc:7,sl:2,tp:5},hist:[],sym:'BTCUSDT'};
+const ST={config:{capital:100,mc:7,sl:2,tp:5},hist:[],sym:'BTCUSDT'};
 
 function sp(n){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');document.getElementById('nav-'+n).classList.add('active');if(n==='macro')loadMacro();if(n==='stocks')loadStocks();}
 function setTab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('pf').style.display=t==='featured'?'block':'none';document.getElementById('pt').style.display=t==='top30'?'block':'none';document.getElementById('pc2').style.display=t==='crypto'?'block':'none';if(t==='crypto')loadCrypto();}
@@ -318,10 +322,9 @@ async function analyzeStock(t,n,y){
 }
 
 async function claudeStock(t,n,y,fg){
-  if(!ST.config.ak)return{accion:'ESPERAR',confianza:0,razon:`⚠️ Configura tu API Key en Config. ${t} (${n}) creció ${y} el último año.`,origen:'error',alerta_roja:false};
   const p=`Eres analista de acciones. Responde SOLO con JSON.\nACCIÓN: ${t} — ${n}\nCrecimiento último año: ${y}\nFear & Greed: ${fg.val} (${fg.label})\nConsidera: valoración post-rally, momentum, riesgos macro (aranceles, Fed, inflación).\nJSON: {"accion":"COMPRAR"|"VENDER"|"ESPERAR","confianza":1-10,"razon":"2-3 oraciones español","origen":"fundamental"|"macro"|"combinado","alerta_roja":true|false}`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ST.config.ak,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:p}]})});
+    const r=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:p}]})});
     const d=await r.json();
     return JSON.parse(d.content[0].text.trim().replace(/```json|```/g,'').trim());
   }catch(e){return{accion:'ESPERAR',confianza:0,razon:'Error: '+e.message,origen:'error',alerta_roja:false};}
@@ -372,10 +375,9 @@ async function fetchFG(){
 }
 
 async function callClaude(m,fg){
-  if(!ST.config.ak)return{accion:'ESPERAR',confianza:0,razon:'⚠️ Configura tu Anthropic API Key en la pestaña Config.',origen:'error',alerta_roja:false};
   const p=`Eres un trader profesional. Responde SOLO con JSON.\nPrecio:$${m.price}|RSI:${m.rsi.toFixed(1)}|EMA20:$${m.ema.toFixed(0)}|Tendencia:${m.trend}\nFear&Greed:${fg.val}-${fg.label}\nJSON:{"accion":"COMPRAR"|"VENDER"|"ESPERAR","confianza":1-10,"razon":"string","origen":"tecnico"|"macro"|"combinado","alerta_roja":true|false}`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ST.config.ak,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:p}]})});
+    const r=await fetch(CLAUDE_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:p}]})});
     const d=await r.json();
     return JSON.parse(d.content[0].text.trim().replace(/```json|```/g,'').trim());
   }catch(e){return{accion:'ESPERAR',confianza:0,razon:'Error:'+e.message,origen:'error',alerta_roja:false};}
@@ -431,7 +433,6 @@ function loadMacro(){
 }
 
 function saveConfig(){
-  ST.config.ak=document.getElementById('cak').value;
   ST.config.capital=parseFloat(document.getElementById('cc').value);
   ST.config.mc=parseInt(document.getElementById('ccf').value);
   ST.config.sl=parseFloat(document.getElementById('csl').value);
@@ -441,7 +442,6 @@ function saveConfig(){
 }
 function loadConfig(){
   try{const s=sessionStorage.getItem('tbc');if(s)Object.assign(ST.config,JSON.parse(s));}catch(e){}
-  document.getElementById('cak').value=ST.config.ak||'';
   document.getElementById('cc').value=ST.config.capital;
   document.getElementById('ccf').value=ST.config.mc;
   document.getElementById('csl').value=ST.config.sl;
