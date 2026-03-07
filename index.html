@@ -760,15 +760,22 @@ function updateSignalUI(sig) {
 }
 
 // ── Precio ────────────────────────────────────────────────────
+const CG_MAP = {
+  'BTCUSDT':'bitcoin','ETHUSDT':'ethereum','BNBUSDT':'binancecoin',
+  'SOLUSDT':'solana','XRPUSDT':'ripple','ADAUSDT':'cardano',
+  'DOGEUSDT':'dogecoin','AVAXUSDT':'avalanche-2','DOTUSDT':'polkadot',
+  'LINKUSDT':'chainlink','MATICUSDT':'matic-network'
+};
+
 async function fetchPrice(sym) {
   sym = sym || CURRENT_SYM;
   try {
-    const [tk, kl] = await Promise.all([
-      fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${sym}`).then(r => r.json()),
-      fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=15m&limit=50`).then(r => r.json())
-    ]);
-    const price = parseFloat(tk.lastPrice);
-    const pct = parseFloat(tk.priceChangePercent);
+    const id = CG_MAP[sym] || sym.replace('USDT','').toLowerCase();
+    const cgr = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true`);
+    const cgj = await cgr.json();
+    if (!cgj[id]) return;
+    const price = cgj[id].usd;
+    const pct   = cgj[id].usd_24h_change || 0;
     PRICES[sym] = price;
 
     if (sym === CURRENT_SYM) {
@@ -896,16 +903,28 @@ async function forceBuyAll() {
   btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    // Obtener precios desde el browser (Binance no bloquea al browser)
-    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT'];
+    // Obtener precios desde CoinGecko (sin restricciones geográficas)
+    const cryptoMap = {
+      'BTCUSDT': 'bitcoin', 'ETHUSDT': 'ethereum', 'BNBUSDT': 'binancecoin',
+      'SOLUSDT': 'solana',  'XRPUSDT': 'ripple',   'ADAUSDT': 'cardano'
+    };
+    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : Object.keys(cryptoMap);
     const prices = {};
-    await Promise.all(syms.map(async sym => {
-      try {
-        const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym);
-        const j = await r.json();
-        if (j.price) prices[sym] = parseFloat(j.price);
-      } catch(e) {}
-    }));
+    try {
+      const ids = syms.map(s => cryptoMap[s] || s.replace('USDT','').toLowerCase()).join(',');
+      const cgr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd');
+      const cgj = await cgr.json();
+      syms.forEach(sym => {
+        const id = cryptoMap[sym] || sym.replace('USDT','').toLowerCase();
+        if (cgj[id] && cgj[id].usd) prices[sym] = cgj[id].usd;
+      });
+    } catch(e) { console.warn('CoinGecko falló:', e); }
+    if (Object.keys(prices).length === 0) {
+      res.innerHTML = '❌ No se pudieron obtener precios. Intenta de nuevo.';
+      res.style.display = 'block';
+      btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
+      return;
+    }
     btn.textContent = '⏳ Comprando...';
     const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
     const d = await r.json();
@@ -933,16 +952,28 @@ async function forceSellAll() {
   btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    // Obtener precios desde el browser
-    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT'];
+    // Obtener precios desde CoinGecko (sin restricciones geográficas)
+    const cryptoMap2 = {
+      'BTCUSDT': 'bitcoin', 'ETHUSDT': 'ethereum', 'BNBUSDT': 'binancecoin',
+      'SOLUSDT': 'solana',  'XRPUSDT': 'ripple',   'ADAUSDT': 'cardano'
+    };
+    const syms2 = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : Object.keys(cryptoMap2);
     const prices = {};
-    await Promise.all(syms.map(async sym => {
-      try {
-        const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym);
-        const j = await r.json();
-        if (j.price) prices[sym] = parseFloat(j.price);
-      } catch(e) {}
-    }));
+    try {
+      const ids2 = syms2.map(s => cryptoMap2[s] || s.replace('USDT','').toLowerCase()).join(',');
+      const cgr2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids2 + '&vs_currencies=usd');
+      const cgj2 = await cgr2.json();
+      syms2.forEach(sym => {
+        const id = cryptoMap2[sym] || sym.replace('USDT','').toLowerCase();
+        if (cgj2[id] && cgj2[id].usd) prices[sym] = cgj2[id].usd;
+      });
+    } catch(e) { console.warn('CoinGecko falló:', e); }
+    if (Object.keys(prices).length === 0) {
+      res.innerHTML = '❌ No se pudieron obtener precios. Intenta de nuevo.';
+      res.style.display = 'block';
+      btn.textContent = '🔴 Vender Todo'; btn.disabled = false;
+      return;
+    }
     btn.textContent = '⏳ Vendiendo...';
     const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
     const d = await r.json();
