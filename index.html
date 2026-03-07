@@ -798,11 +798,20 @@ async function testTelegram() {
     const d = await r.json(); btn.textContent = d.ok ? '✅ Enviado' : '❌ Error';
   } catch (e) { btn.textContent = '❌ Error'; }
   setTimeout(() => { btn.textContent = '🧪 Enviar prueba'; btn.disabled = false; }, 3000);
+  async function testTelegram() {
+  const btn = event.target; btn.textContent = 'Enviando...'; btn.disabled = true;
+  try {
+    const r = await fetch(`${PROXY}/telegram`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'COMPRAR', razon: '✅ TradeBot AI v3 — 16 criptos activo.', confianza: 8, precio: '70,000', simbolo: 'BTC/USDT' }) });
+    const d = await r.json(); btn.textContent = d.ok ? '✅ Enviado' : '❌ Error';
+  } catch (e) { btn.textContent = '❌ Error'; }
+  setTimeout(() => { btn.textContent = '🧪 Enviar prueba'; btn.disabled = false; }, 3000);
 }
 
 <button class="sbtn" style="background:#e67e22; color:white; margin-top:10px; border:none; padding:13px; border-radius:11px; cursor:pointer; font-weight:800;" onclick="lanzarTodo()">
     🚀 LANZAR TODO
 </button>
+}
+
 
 function exportCSV() {
   const s = ALL_STATES[CURRENT_SYM];
