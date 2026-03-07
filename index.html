@@ -478,14 +478,29 @@ async function syncAll() {
     const r = await fetch(`${PROXY}/status-all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
-      ALL_CRYPTOS = d.cryptos || [];
-      d.states.forEach(s => { ALL_STATES[s.sym] = s; });
+      // Solo actualizar si llegaron datos válidos — nunca borrar estado existente
+      if (d.cryptos && d.cryptos.length > 0) ALL_CRYPTOS = d.cryptos;
+      if (d.states && d.states.length > 0) {
+        d.states.forEach(s => {
+          // Fusionar conservando trades y señales si el nuevo estado está vacío
+          const existing = ALL_STATES[s.sym];
+          if (existing && existing.trades && existing.trades.length > 0 && (!s.trades || s.trades.length === 0)) {
+            ALL_STATES[s.sym] = { ...s, trades: existing.trades, signalHistory: existing.signalHistory || [] };
+          } else {
+            ALL_STATES[s.sym] = s;
+          }
+        });
+      }
       updateCurrentView();
       updateSelectorHeader();
       renderDropdown();
       setSyncStatus('ok');
     }
-  } catch (e) { setSyncStatus('err'); }
+  } catch (e) {
+    setSyncStatus('err');
+    console.warn('syncAll falló:', e.message);
+    // No borrar estado existente si falla la sync
+  }
 }
 
 async function syncCurrent() {
@@ -902,8 +917,19 @@ async function forceSellAll() {
 }
 
 // ── Init ──────────────────────────────────────────────────────
-syncAll();
-fetchPrice(CURRENT_SYM);
+// Cargar estado al iniciar — con retry si falla la primera vez
+async function init() {
+  await syncAll();
+  fetchPrice(CURRENT_SYM);
+  // Si no hay criptos todavía, reintentar en 3s
+  if (ALL_CRYPTOS.length === 0) {
+    setTimeout(async () => {
+      await syncAll();
+      fetchPrice(CURRENT_SYM);
+    }, 3000);
+  }
+}
+init();
 
 // Sync KV cada 30s, precios cada 15s, precios de todas cada 2 min
 setInterval(syncAll, 30000);
