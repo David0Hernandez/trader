@@ -359,6 +359,27 @@ let ALL_STATES = {};   // {sym: state}
 let ALL_CRYPTOS = [];  // lista de {sym, name, short}
 let PRICES = {};       // {sym: price}
 
+// Cache en sessionStorage — persiste durante la sesión del browser
+// Se actualiza cada vez que llega data del KV
+function saveCache(sym, state) {
+  try { sessionStorage.setItem('tb_state_' + sym, JSON.stringify(state)); } catch(e) {}
+}
+function loadCache(sym) {
+  try {
+    const raw = sessionStorage.getItem('tb_state_' + sym);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function saveCryptoList(cryptos) {
+  try { sessionStorage.setItem('tb_cryptos', JSON.stringify(cryptos)); } catch(e) {}
+}
+function loadCryptoList() {
+  try {
+    const raw = sessionStorage.getItem('tb_cryptos');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
 const CRYPTO_COLORS = {
   BTC:'#f7931a', ETH:'#627eea', BNB:'#f3ba2f', SOL:'#9945ff',
   XRP:'#00aae4', ADA:'#0033ad', DOGE:'#c2a633', AVAX:'#e84142',
@@ -475,20 +496,21 @@ function updateSelectorHeader() {
 async function syncAll() {
   setSyncStatus('syncing');
   try {
-    const r = await fetch(`${PROXY}/status-all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const r = await fetch(PROXY + '/status-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
     const d = await r.json();
     if (d.ok) {
-      // Solo actualizar si llegaron datos válidos — nunca borrar estado existente
-      if (d.cryptos && d.cryptos.length > 0) ALL_CRYPTOS = d.cryptos;
+      if (d.cryptos && d.cryptos.length > 0) {
+        ALL_CRYPTOS = d.cryptos;
+        saveCryptoList(d.cryptos);
+      }
       if (d.states && d.states.length > 0) {
         d.states.forEach(s => {
-          // Fusionar conservando trades y señales si el nuevo estado está vacío
-          const existing = ALL_STATES[s.sym];
-          if (existing && existing.trades && existing.trades.length > 0 && (!s.trades || s.trades.length === 0)) {
-            ALL_STATES[s.sym] = { ...s, trades: existing.trades, signalHistory: existing.signalHistory || [] };
-          } else {
-            ALL_STATES[s.sym] = s;
-          }
+          ALL_STATES[s.sym] = s;
+          saveCache(s.sym, s);  // guardar en cache
         });
       }
       updateCurrentView();
@@ -496,10 +518,9 @@ async function syncAll() {
       renderDropdown();
       setSyncStatus('ok');
     }
-  } catch (e) {
+  } catch(e) {
     setSyncStatus('err');
     console.warn('syncAll falló:', e.message);
-    // No borrar estado existente si falla la sync
   }
 }
 
@@ -872,21 +893,34 @@ async function forceBuyAll() {
   if (!confirm('¿Comprar las 6 criptos al precio actual? ($100 cada una)')) return;
   const btn = document.getElementById('force-buy-btn');
   const res = document.getElementById('force-result');
-  btn.textContent = '⏳ Comprando...'; btn.disabled = true;
+  btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    // Obtener precios desde el browser (Binance no bloquea al browser)
+    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT'];
+    const prices = {};
+    await Promise.all(syms.map(async sym => {
+      try {
+        const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym);
+        const j = await r.json();
+        if (j.price) prices[sym] = parseFloat(j.price);
+      } catch(e) {}
+    }));
+    btn.textContent = '⏳ Comprando...';
+    const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
     const d = await r.json();
     if (d.ok) {
       const lines = d.results.map(r =>
         r.ok
           ? `✅ ${r.short} — $${parseFloat(r.price).toLocaleString('en-US', { maximumFractionDigits: 2 })} · ${parseFloat(r.qty).toFixed(5)} unidades`
-          : `⚠️ ${r.sym.replace('USDT','')} — ${r.reason}`
+          : `⚠️ ${r.sym ? r.sym.replace('USDT','') : '?'} — ${r.reason}`
       ).join('<br>');
       res.innerHTML = '<b>Resultado compras:</b><br>' + lines;
       res.style.display = 'block';
+      // Sync completo para reflejar trades en la UI
       await syncAll();
       renderGlobal();
+      renderTrades();
     }
   } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
   btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
@@ -896,38 +930,57 @@ async function forceSellAll() {
   if (!confirm('¿Vender todas las posiciones abiertas ahora?')) return;
   const btn = document.getElementById('force-sell-btn');
   const res = document.getElementById('force-result');
-  btn.textContent = '⏳ Vendiendo...'; btn.disabled = true;
+  btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    // Obtener precios desde el browser
+    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT'];
+    const prices = {};
+    await Promise.all(syms.map(async sym => {
+      try {
+        const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=' + sym);
+        const j = await r.json();
+        if (j.price) prices[sym] = parseFloat(j.price);
+      } catch(e) {}
+    }));
+    btn.textContent = '⏳ Vendiendo...';
+    const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
     const d = await r.json();
     if (d.ok) {
       const lines = d.results.map(r =>
         r.ok
           ? `${parseFloat(r.pnl) >= 0 ? '💰' : '💸'} ${r.short} — ${parseFloat(r.pnl) >= 0 ? '+' : ''}$${parseFloat(r.pnl).toFixed(2)} (${r.pnlPct}%)`
-          : `⚠️ ${r.sym.replace('USDT','')} — ${r.reason}`
+          : `⚠️ ${r.sym ? r.sym.replace('USDT','') : '?'} — ${r.reason}`
       ).join('<br>');
       res.innerHTML = '<b>Resultado ventas:</b><br>' + lines;
       res.style.display = 'block';
       await syncAll();
       renderGlobal();
+      renderTrades();
     }
   } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
   btn.textContent = '🔴 Vender Todo'; btn.disabled = false;
 }
 
 // ── Init ──────────────────────────────────────────────────────
-// Cargar estado al iniciar — con retry si falla la primera vez
 async function init() {
+  // 1. Cargar cache inmediatamente (sin esperar red)
+  const cachedCryptos = loadCryptoList();
+  if (cachedCryptos.length > 0) {
+    ALL_CRYPTOS = cachedCryptos;
+    cachedCryptos.forEach(c => {
+      const cached = loadCache(c.sym);
+      if (cached) ALL_STATES[c.sym] = cached;
+    });
+    updateCurrentView();
+    updateSelectorHeader();
+    renderDropdown();
+    renderTrades();
+  }
+
+  // 2. Luego sincronizar desde KV (actualiza con datos frescos)
   await syncAll();
   fetchPrice(CURRENT_SYM);
-  // Si no hay criptos todavía, reintentar en 3s
-  if (ALL_CRYPTOS.length === 0) {
-    setTimeout(async () => {
-      await syncAll();
-      fetchPrice(CURRENT_SYM);
-    }, 3000);
-  }
 }
 init();
 
