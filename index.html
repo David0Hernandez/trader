@@ -760,23 +760,13 @@ function updateSignalUI(sig) {
 }
 
 // ── Precio ────────────────────────────────────────────────────
-const CG_MAP = {
-  'BTCUSDT':'bitcoin','ETHUSDT':'ethereum','BNBUSDT':'binancecoin',
-  'SOLUSDT':'solana','XRPUSDT':'ripple','ADAUSDT':'cardano',
-  'DOGEUSDT':'dogecoin','AVAXUSDT':'avalanche-2','DOTUSDT':'polkadot',
-  'LINKUSDT':'chainlink','MATICUSDT':'matic-network'
-};
-
 async function fetchPrice(sym) {
   sym = sym || CURRENT_SYM;
+  // Precio viene del KV via syncAll — solo actualizar display con lo que ya tenemos
+  const price = PRICES[sym];
+  if (!price) return;
   try {
-    const id = CG_MAP[sym] || sym.replace('USDT','').toLowerCase();
-    const cgr = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd&include_24hr_change=true`);
-    const cgj = await cgr.json();
-    if (!cgj[id]) return;
-    const price = cgj[id].usd;
-    const pct   = cgj[id].usd_24h_change || 0;
-    PRICES[sym] = price;
+    const pct = 0; // El cron no guarda % 24h, solo precio
 
     if (sym === CURRENT_SYM) {
       document.getElementById('pval').textContent = '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
@@ -903,30 +893,9 @@ async function forceBuyAll() {
   btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    // Obtener precios desde CoinGecko (sin restricciones geográficas)
-    const cryptoMap = {
-      'BTCUSDT': 'bitcoin', 'ETHUSDT': 'ethereum', 'BNBUSDT': 'binancecoin',
-      'SOLUSDT': 'solana',  'XRPUSDT': 'ripple',   'ADAUSDT': 'cardano'
-    };
-    const syms = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : Object.keys(cryptoMap);
-    const prices = {};
-    try {
-      const ids = syms.map(s => cryptoMap[s] || s.replace('USDT','').toLowerCase()).join(',');
-      const cgr = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd');
-      const cgj = await cgr.json();
-      syms.forEach(sym => {
-        const id = cryptoMap[sym] || sym.replace('USDT','').toLowerCase();
-        if (cgj[id] && cgj[id].usd) prices[sym] = cgj[id].usd;
-      });
-    } catch(e) { console.warn('CoinGecko falló:', e); }
-    if (Object.keys(prices).length === 0) {
-      res.innerHTML = '❌ No se pudieron obtener precios. Intenta de nuevo.';
-      res.style.display = 'block';
-      btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
-      return;
-    }
+    // Precios ya están en KV (guardados por el cron cada 2 min)
     btn.textContent = '⏳ Comprando...';
-    const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
+    const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
       const lines = d.results.map(r =>
@@ -955,30 +924,9 @@ async function forceSellAll() {
   btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
   res.style.display = 'none';
   try {
-    // Obtener precios desde CoinGecko (sin restricciones geográficas)
-    const cryptoMap2 = {
-      'BTCUSDT': 'bitcoin', 'ETHUSDT': 'ethereum', 'BNBUSDT': 'binancecoin',
-      'SOLUSDT': 'solana',  'XRPUSDT': 'ripple',   'ADAUSDT': 'cardano'
-    };
-    const syms2 = ALL_CRYPTOS.length > 0 ? ALL_CRYPTOS.map(c => c.sym) : Object.keys(cryptoMap2);
-    const prices = {};
-    try {
-      const ids2 = syms2.map(s => cryptoMap2[s] || s.replace('USDT','').toLowerCase()).join(',');
-      const cgr2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids2 + '&vs_currencies=usd');
-      const cgj2 = await cgr2.json();
-      syms2.forEach(sym => {
-        const id = cryptoMap2[sym] || sym.replace('USDT','').toLowerCase();
-        if (cgj2[id] && cgj2[id].usd) prices[sym] = cgj2[id].usd;
-      });
-    } catch(e) { console.warn('CoinGecko falló:', e); }
-    if (Object.keys(prices).length === 0) {
-      res.innerHTML = '❌ No se pudieron obtener precios. Intenta de nuevo.';
-      res.style.display = 'block';
-      btn.textContent = '🔴 Vender Todo'; btn.disabled = false;
-      return;
-    }
+    // Precios ya están en KV (guardados por el cron cada 2 min)
     btn.textContent = '⏳ Vendiendo...';
-    const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prices }) });
+    const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
       const lines = d.results.map(r =>
@@ -1020,9 +968,7 @@ async function init() {
 init();
 
 // Sync KV cada 30s, precios cada 15s, precios de todas cada 2 min
-setInterval(syncAll, 30000);
-setInterval(() => fetchPrice(CURRENT_SYM), 15000);
-setInterval(fetchAllPrices, 120000);
+setInterval(syncAll, 30000);  // sync KV cada 30s — esto actualiza precios también
 </script>
 </body>
 </html>
