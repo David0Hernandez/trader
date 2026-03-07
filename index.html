@@ -327,7 +327,13 @@
         </div>
       </div>
       <button class="sbtn" onclick="saveConfig()">💾 Guardar en nube</button>
-      <button class="sbtn" style="background:rgba(255,56,96,.15);color:var(--red);border:1px solid rgba(255,56,96,.3)" onclick="resetAll()">🗑 Reset todas las criptos</button>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:8px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">🔄 Nuevo ejercicio</div>
+        <div style="margin-bottom:10px">
+          <button class="sbtn" style="width:100%;background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3);font-size:14px;padding:14px" onclick="startFresh(100)">🚀 Nuevo ejercicio — $600 total ($100 × 6 criptos)</button>
+        </div>
+        <button class="sbtn" style="width:100%;background:rgba(255,56,96,.1);color:var(--red);border:1px solid rgba(255,56,96,.2);font-size:11px" onclick="resetAll()">🗑 Reset sin cambiar capital</button>
+      </div>
     </div>
   </main>
 
@@ -549,7 +555,7 @@ function updateCurrentView() {
 
   document.getElementById('albl').textContent = c.short + ' / USDT';
   document.getElementById('port-cash').textContent = '$' + s.cash.toFixed(2);
-  document.getElementById('port-btc').textContent = '$' + btcVal.toFixed(2);
+  document.getElementById('port-btc').textContent = s.btcQty > 0 ? '$' + btcVal.toFixed(2) + ' · ' + s.btcQty.toFixed(5) + ' ' + c.short : '$0.00';
   document.getElementById('port-total').textContent = '$' + total.toFixed(2);
 
   const pe = document.getElementById('port-pnl');
@@ -598,13 +604,15 @@ function updateCurrentView() {
 function renderGlobal() {
   let totalPnl = 0, totalCap = 0, activeCount = 0, wins = 0, totalTrades = 0;
 
+  let totalStarting = 0;
   ALL_CRYPTOS.forEach(c => {
     const s = ALL_STATES[c.sym];
     if (!s) return;
     const price = PRICES[c.sym] || 0;
     const total = s.cash + s.btcQty * price;
-    const pnl = total - (s.startingCapital || 100);
-    totalPnl += pnl;
+    const starting = s.startingCapital || s.config?.capital || 100;
+    totalStarting += starting;
+    totalPnl += total - starting;
     totalCap += total;
     if (s.fase === 'EN_POSICION') activeCount++;
     const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA');
@@ -652,68 +660,80 @@ function renderGlobal() {
 
 // ── Render Trades ────────────────────────────────────────────
 function renderTrades() {
-  const s = ALL_STATES[CURRENT_SYM];
-  const trades = s ? s.trades || [] : [];
-  const c = ALL_CRYPTOS.find(x => x.sym === CURRENT_SYM) || { short: symToShort(CURRENT_SYM) };
+  // Recopilar TODOS los trades de TODAS las criptos
+  let allTrades = [];
+  ALL_CRYPTOS.forEach(c => {
+    const s = ALL_STATES[c.sym];
+    if (!s || !s.trades) return;
+    s.trades.forEach(t => allTrades.push({ ...t, _sym: c.sym, _short: c.short, _state: s }));
+  });
 
-  document.getElementById('trades-title').textContent = 'Trades — ' + c.short;
+  // Ordenar por fecha de compra más reciente primero
+  allTrades.sort((a, b) => new Date(b.buyTime) - new Date(a.buyTime));
 
-  const closed = trades.filter(t => t.status !== 'ABIERTA');
+  const closed = allTrades.filter(t => t.status !== 'ABIERTA');
+  const open = allTrades.filter(t => t.status === 'ABIERTA');
   const wins = closed.filter(t => t.pnl > 0).length;
   const totalPnl = closed.reduce((acc, t) => acc + (t.pnl || 0), 0);
   const winRate = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
+
+  document.getElementById('trades-title').textContent = 'Historial — Todas las criptos';
 
   const pnlEl = document.getElementById('st-pnl');
   pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
   pnlEl.style.color = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--muted)';
 
-  const price = PRICES[CURRENT_SYM] || 0;
-  const cap = s ? s.cash + s.btcQty * price : 100;
-  document.getElementById('st-capital').textContent = '$' + cap.toFixed(2);
+  // Capital total de todas las criptos
+  let totalCap = 0;
+  ALL_CRYPTOS.forEach(c => {
+    const s = ALL_STATES[c.sym];
+    const price = PRICES[c.sym] || 0;
+    if (s) totalCap += s.cash + s.btcQty * price;
+  });
+  document.getElementById('st-capital').textContent = '$' + totalCap.toFixed(2);
   document.getElementById('st-ops').textContent = closed.length;
   document.getElementById('st-win').textContent = winRate;
 
   const list = document.getElementById('trades-list');
-  if (!trades.length) {
+  if (!allTrades.length) {
     list.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div>';
     return;
   }
 
-  list.innerHTML = trades.map((t, i) => {
+  const color = { BTC:'#F7931A',ETH:'#627EEA',BNB:'#F3BA2F',SOL:'#9945FF',XRP:'#00AAE4',ADA:'#0033AD' };
+
+  list.innerHTML = allTrades.map(t => {
     const isOpen = t.status === 'ABIERTA';
     const isWin = t.pnl > 0;
-    const rowClass = isOpen ? 'open' : isWin ? 'win' : 'loss';
-    const statusText = isOpen ? '🟡 ABIERTA' : isWin ? '✅ GANANCIA' : '🔴 PÉRDIDA';
-    const curPrice = PRICES[CURRENT_SYM] || 0;
+    const curPrice = PRICES[t._sym] || 0;
+    const unrealizedPnl = isOpen && curPrice && t.buyPrice ? t._state.btcQty * (curPrice - t.buyPrice) : null;
+    const c = color[t._short] || 'var(--muted)';
 
-    const pnlDisplay = isOpen
-      ? (curPrice > 0 && t.buyPrice ? (() => { const u = (s.btcQty) * (curPrice - t.buyPrice); return (u >= 0 ? '+' : '') + '$' + u.toFixed(2); })() : 'Activa')
-      : (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) + ' (' + t.pnlPct + '%)';
+    const entradaAmt = t.capital ? '$' + parseFloat(t.capital).toFixed(2) : (t.buyPrice && t.qty ? '$' + (t.buyPrice * t.qty).toFixed(2) : '--');
+    const salidaAmt = isOpen
+      ? (unrealizedPnl !== null ? (unrealizedPnl >= 0 ? '+' : '') + '$' + unrealizedPnl.toFixed(2) : '...')
+      : (t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) : '--');
 
-    const pnlClass = isOpen ? 'open' : isWin ? 'pos' : 'neg';
+    const bgColor = isOpen ? 'rgba(255,209,102,0.05)' : isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
+    const borderColor = isOpen ? 'rgba(255,209,102,0.3)' : isWin ? 'rgba(0,255,136,0.3)' : 'rgba(255,56,96,0.3)';
+    const salidaColor = isOpen ? 'var(--yellow)' : isWin ? 'var(--green)' : 'var(--red)';
 
-    return `<div class="trade-row ${rowClass}">
-      <div class="tr-header">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">#${t.num || (trades.length - i)} · ${t.symbol || c.short + '/USDT'}</div>
-        <div class="tr-status ${isOpen ? 'open' : isWin ? 'win' : 'loss'}">${statusText}</div>
+    return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:8px;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700">${t._short}</div>
+      <div>
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700">${t._short}/USDT</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">${t.buyTime ? fmtDate(t.buyTime) : '--'}${!isOpen && t.sellTime ? ' → ' + fmtDate(t.sellTime) : ''}</div>
       </div>
-      <div class="tr-pnl-big ${pnlClass}">${pnlDisplay}</div>
-      <div class="tr-prices">
-        <div class="tr-price-box">
-          <div class="tr-price-lbl">🟢 Entrada</div>
-          <div class="tr-price-val" style="color:var(--green)">$${t.buyPrice ? t.buyPrice.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '--'}</div>
-          <div class="tr-price-time">${t.buyTime ? fmtDate(t.buyTime) : '--'}</div>
-        </div>
-        <div class="tr-price-box">
-          <div class="tr-price-lbl">${isOpen ? '⏳ Actual' : '🔴 Salida'}</div>
-          <div class="tr-price-val" style="color:${isOpen ? 'var(--yellow)' : 'var(--red)'}">
-            ${isOpen ? (curPrice > 0 ? '$' + curPrice.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '...') : '$' + (t.sellPrice ? t.sellPrice.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '--')}
-          </div>
-          <div class="tr-price-time">${isOpen ? 'Tiempo real' : (t.sellTime ? fmtDate(t.sellTime) : '--')}</div>
-        </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">Entrada</div>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text)">${entradaAmt}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">$${t.buyPrice ? t.buyPrice.toLocaleString('en-US',{maximumFractionDigits:2}) : '--'}</div>
       </div>
-      ${t.buyReason ? `<div class="tr-reason">🧠 Entrada: ${t.buyReason}</div>` : ''}
-      ${!isOpen && t.sellReason ? `<div class="tr-reason" style="border-left:2px solid ${isWin ? 'var(--green)' : 'var(--red)'}">🔚 Salida: ${t.sellReason}</div>` : ''}
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${isOpen ? 'P&L actual' : 'Resultado'}</div>
+        <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${salidaColor}">${salidaAmt}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${isOpen ? '🟡 Activa' : (t.sellPrice ? '$' + t.sellPrice.toLocaleString('en-US',{maximumFractionDigits:2}) : '--')}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -823,6 +843,30 @@ async function resetCurrent() {
     const d = await r.json();
     if (d.ok) { ALL_STATES[CURRENT_SYM] = d.state; updateCurrentView(); renderDropdown(); }
   } catch (e) {}
+}
+
+async function startFresh(capital) {
+  if (!confirm(`¿Empezar ejercicio nuevo con $${capital.toLocaleString()} por cripto? Esto borrará todo el historial.`)) return;
+  try {
+    await fetch(`${PROXY}/reset-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capital })
+    });
+    // Update config capital too
+    await fetch(`${PROXY}/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capital })
+    });
+    Object.keys(ALL_STATES).forEach(k => delete ALL_STATES[k]);
+    sessionStorage.clear();
+    await syncAll();
+    sp('global');
+    alert(`✅ Ejercicio iniciado\n$${(capital*6).toLocaleString()} en total · $${capital} por cripto\nEl bot empezará a operar en los próximos 2 minutos.`);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
 }
 
 async function resetAll() {
