@@ -208,11 +208,11 @@
         <div class="global-grid">
           <div class="global-item">
             <div class="global-lbl">Capital inicial</div>
-            <div class="global-val" id="d-starting" style="color:var(--muted)">$600.00</div>
+            <div class="global-val" id="d-starting" style="color:var(--muted)">$1,200.00</div>
           </div>
           <div class="global-item">
             <div class="global-lbl">Capital actual</div>
-            <div class="global-val" id="d-capital" style="color:var(--green)">$600.00</div>
+            <div class="global-val" id="d-capital" style="color:var(--green)">$1,200.00</div>
           </div>
           <div class="global-item">
             <div class="global-lbl">P&L Total</div>
@@ -664,13 +664,24 @@ function renderBotDashboard() {
     const s = ALL_STATES[c.sym];
     if (!s) return;
     const price = PRICES[c.sym] || 0;
-    const total = s.cash + s.btcQty * price;
-    const starting = s.startingCapital || s.config?.capital || 100;
-    totalStart += starting;
-    totalCap += total;
-    totalPnl += total - starting;
+
+    // Long
+    const longVal   = s.cash + s.btcQty * price;
+    const longStart = s.startingCapital || s.config?.capital || 100;
+
+    // Short: devuelve capital original +/- P&L
+    const shortUnreal = s.shortQty > 0 ? s.shortQty * ((s.shortEntryPrice || 0) - price) : 0;
+    const shortVal    = (s.cashShort || 0) + (s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice || 0) + shortUnreal : 0);
+    const shortStart  = s.startingCapitalShort || s.config?.capital || 100;
+
+    totalStart += longStart + shortStart;
+    totalCap   += longVal + shortVal;
+    totalPnl   += (longVal - longStart) + (shortVal - shortStart);
+
     if (s.fase === 'EN_POSICION') activeCount++;
-    const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA');
+    if (s.faseShort === 'EN_SHORT') activeCount++;
+
+    const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA' && t.status !== 'ABIERTA_SHORT');
     wins += closed.filter(t => t.pnl > 0).length;
     totalTrades += closed.length;
   });
@@ -721,17 +732,41 @@ function renderBotDashboard() {
     const lastSignal = s && s.signalHistory && s.signalHistory[0];
     const signalDot = lastSignal ? (lastSignal.accion === 'COMPRAR' ? '🟢' : lastSignal.accion === 'VENDER' ? '🔴' : '🟡') : '⚪';
 
-    return `<div style="background:var(--bg2);border:1px solid ${borderColor};border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px">
-      <div style="width:36px;height:36px;border-radius:9px;background:${cc}22;color:${cc};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700">${c.short}</div>
-      <div>
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700">${c.name}</div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">${fase} ${signalDot}</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${price > 0 ? '$' + price.toLocaleString('en-US',{maximumFractionDigits:4}) : '--'}</div>
+    // Short P&L
+    const shortVal2 = (s && s.shortQty > 0) ? s.shortQty * ((s.shortEntryPrice||0) - price) : 0;
+    const shortCash = s ? (s.cashShort || 0) : 100;
+    const shortStart2 = s ? (s.startingCapitalShort || s.config?.capital || 100) : 100;
+    const shortTotal = shortCash + (s && s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice||0) + shortVal2 : 0);
+    const shortPnl = shortTotal - shortStart2;
+    const shortPnlColor = shortPnl > 0 ? 'var(--green)' : shortPnl < 0 ? 'var(--red)' : 'var(--muted)';
+    const faseShort = s ? (s.faseShort === 'EN_SHORT' ? '📉 En short' : '🔍 Buscando') : '--';
+    const totalAll = total + shortTotal;
+    const pnlAll = pnl + shortPnl;
+    const pnlAllColor = pnlAll > 0 ? 'var(--green)' : pnlAll < 0 ? 'var(--red)' : 'var(--muted)';
+
+    return `<div style="background:var(--bg2);border:1px solid ${borderColor};border-radius:12px;padding:12px 14px">
+      <div style="display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:${cc}22;color:${cc};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700">${c.short}</div>
+        <div>
+          <div style="font-family:var(--mono);font-size:12px;font-weight:700">${c.name}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${price > 0 ? '$' + price.toLocaleString('en-US',{maximumFractionDigits:4}) : '--'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${pnlAllColor}">${(pnlAll >= 0 ? '+' : '')}$${pnlAll.toFixed(2)}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">$${totalAll.toFixed(2)} total</div>
+        </div>
       </div>
-      <div style="text-align:right">
-        <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${pnlColor}">${(pnl >= 0 ? '+' : '')}$${pnl.toFixed(2)}</div>
-        <div style="font-family:var(--mono);font-size:10px;color:${pnlColor};margin-top:1px">${(pct2 >= 0 ? '+' : '')}${pct2}%</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">$${total.toFixed(2)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+        <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:8px;padding:6px 8px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">📈 LONG</div>
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:${pnlColor};margin-top:2px">${(pnl >= 0 ? '+' : '')}$${pnl.toFixed(2)}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${fase}</div>
+        </div>
+        <div style="background:rgba(255,56,96,0.06);border:1px solid rgba(255,56,96,0.15);border-radius:8px;padding:6px 8px">
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">📉 SHORT</div>
+          <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:${shortPnlColor};margin-top:2px">${(shortPnl >= 0 ? '+' : '')}$${shortPnl.toFixed(2)}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${faseShort}</div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -750,8 +785,8 @@ function renderTrades() {
   // Ordenar por fecha de compra más reciente primero
   allTrades.sort((a, b) => new Date(b.buyTime) - new Date(a.buyTime));
 
-  const closed = allTrades.filter(t => t.status !== 'ABIERTA');
-  const open = allTrades.filter(t => t.status === 'ABIERTA');
+  const closed = allTrades.filter(t => t.status !== 'ABIERTA' && t.status !== 'ABIERTA_SHORT');
+  const open = allTrades.filter(t => t.status === 'ABIERTA' || t.status === 'ABIERTA_SHORT');
   const wins = closed.filter(t => t.pnl > 0).length;
   const totalPnl = closed.reduce((acc, t) => acc + (t.pnl || 0), 0);
   const winRate = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
@@ -762,12 +797,15 @@ function renderTrades() {
   pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
   pnlEl.style.color = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--muted)';
 
-  // Capital total de todas las criptos
+  // Capital total (long + short)
   let totalCap = 0;
   ALL_CRYPTOS.forEach(c => {
     const s = ALL_STATES[c.sym];
     const price = PRICES[c.sym] || 0;
-    if (s) totalCap += s.cash + s.btcQty * price;
+    if (!s) return;
+    totalCap += s.cash + s.btcQty * price;
+    const shortPnl = s.shortQty > 0 ? s.shortQty * ((s.shortEntryPrice||0) - price) : 0;
+    totalCap += (s.cashShort || 0) + (s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice||0) + shortPnl : 0);
   });
   document.getElementById('st-capital').textContent = '$' + totalCap.toFixed(2);
   document.getElementById('st-ops').textContent = closed.length;
@@ -788,20 +826,29 @@ function renderTrades() {
     const unrealizedPnl = isOpen && curPrice && t.buyPrice ? t._state.btcQty * (curPrice - t.buyPrice) : null;
     const c = color[t._short] || 'var(--muted)';
 
-    const entradaAmt = t.capital ? '$' + parseFloat(t.capital).toFixed(2) : (t.buyPrice && t.qty ? '$' + (t.buyPrice * t.qty).toFixed(2) : '--');
-    const salidaAmt = isOpen
-      ? (unrealizedPnl !== null ? (unrealizedPnl >= 0 ? '+' : '') + '$' + unrealizedPnl.toFixed(2) : '...')
+    const isShort = t.type === 'SHORT';
+    const isOpenShort = t.status === 'ABIERTA_SHORT';
+    const isAnyOpen = isOpen || isOpenShort;
+    const shortUnrealized = isOpenShort && curPrice && t.buyPrice ? t._state.shortQty * (t.buyPrice - curPrice) : null;
+    const displayUnrealized = isOpen ? unrealizedPnl : shortUnrealized;
+
+    const entradaAmt = t.capital ? '$' + parseFloat(t.capital).toFixed(2) : '--';
+    const salidaAmt = isAnyOpen
+      ? (displayUnrealized !== null ? (displayUnrealized >= 0 ? '+' : '') + '$' + displayUnrealized.toFixed(2) : '...')
       : (t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) : '--');
 
-    const bgColor = isOpen ? 'rgba(255,209,102,0.05)' : isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
-    const borderColor = isOpen ? 'rgba(255,209,102,0.3)' : isWin ? 'rgba(0,255,136,0.3)' : 'rgba(255,56,96,0.3)';
-    const salidaColor = isOpen ? 'var(--yellow)' : isWin ? 'var(--green)' : 'var(--red)';
+    const bgColor = isAnyOpen ? 'rgba(255,209,102,0.05)' : isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
+    const borderColor = isAnyOpen ? 'rgba(255,209,102,0.3)' : isWin ? 'rgba(0,255,136,0.3)' : 'rgba(255,56,96,0.3)';
+    const salidaColor = isAnyOpen ? 'var(--yellow)' : isWin ? 'var(--green)' : 'var(--red)';
+    const typeBadge = isShort
+      ? `<span style="font-family:var(--mono);font-size:9px;background:rgba(255,56,96,0.2);color:var(--red);border-radius:4px;padding:1px 5px">SHORT</span>`
+      : `<span style="font-family:var(--mono);font-size:9px;background:rgba(0,255,136,0.2);color:var(--green);border-radius:4px;padding:1px 5px">LONG</span>`;
 
     return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px">
       <div style="width:34px;height:34px;border-radius:8px;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700">${t._short}</div>
       <div>
-        <div style="font-family:var(--mono);font-size:11px;font-weight:700">${t._short}/USDT</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">${t.buyTime ? fmtDate(t.buyTime) : '--'}${!isOpen && t.sellTime ? ' → ' + fmtDate(t.sellTime) : ''}</div>
+        <div style="display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;font-weight:700">${t._short}/USDT ${typeBadge}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">${t.buyTime ? fmtDate(t.buyTime) : '--'}${!isAnyOpen && t.sellTime ? ' → ' + fmtDate(t.sellTime) : ''}</div>
       </div>
       <div style="text-align:right">
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">Entrada</div>
@@ -809,9 +856,9 @@ function renderTrades() {
         <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">$${t.buyPrice ? t.buyPrice.toLocaleString('en-US',{maximumFractionDigits:2}) : '--'}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${isOpen ? 'P&L actual' : 'Resultado'}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${isAnyOpen ? 'P&L actual' : 'Resultado'}</div>
         <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${salidaColor}">${salidaAmt}</div>
-        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${isOpen ? '🟡 Activa' : (t.sellPrice ? '$' + t.sellPrice.toLocaleString('en-US',{maximumFractionDigits:2}) : '--')}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">${isAnyOpen ? '🟡 Activa' : (t.sellPrice ? '$' + t.sellPrice.toLocaleString('en-US',{maximumFractionDigits:2}) : '--')}</div>
       </div>
     </div>`;
   }).join('');
