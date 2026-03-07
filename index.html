@@ -936,10 +936,13 @@ async function forceBuyAll() {
       ).join('<br>');
       res.innerHTML = '<b>Resultado compras:</b><br>' + lines;
       res.style.display = 'block';
-      // Sync completo para reflejar trades en la UI
+      // Sync completo — esperar que KV esté actualizado
+      await new Promise(r => setTimeout(r, 800));
       await syncAll();
       renderGlobal();
       renderTrades();
+      // Mostrar trades automáticamente
+      sp('trades');
     }
   } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
   btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
@@ -995,7 +998,7 @@ async function forceSellAll() {
 
 // ── Init ──────────────────────────────────────────────────────
 async function init() {
-  // 1. Cargar cache inmediatamente (sin esperar red)
+  // 1. Mostrar cache local inmediatamente (UX rápido)
   const cachedCryptos = loadCryptoList();
   if (cachedCryptos.length > 0) {
     ALL_CRYPTOS = cachedCryptos;
@@ -1009,9 +1012,10 @@ async function init() {
     renderTrades();
   }
 
-  // 2. Luego sincronizar desde KV (actualiza con datos frescos)
+  // 2. SIEMPRE sincronizar desde KV al cargar — funciona en cualquier dispositivo
   await syncAll();
   fetchPrice(CURRENT_SYM);
+  fetchAllPrices();
 }
 init();
 
