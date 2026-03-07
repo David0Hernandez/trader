@@ -196,54 +196,58 @@
     <!-- ═══ DASHBOARD ═══ -->
     <div class="page active" id="page-dashboard">
 
-      <div class="pc">
-        <div class="plabel" id="albl">BTC / USDT</div>
-        <div class="pval" id="pval">$--,---</div>
-        <div class="pch up" id="pch"><span>▲</span><span id="ppct">--%</span></div>
-        <div class="irow">
-          <div class="ind"><div class="ilbl">RSI</div><div class="ival" id="rsi" style="color:var(--yellow)">--</div></div>
-          <div class="ind"><div class="ilbl">EMA 20</div><div class="ival" id="ema" style="color:var(--blue)">--</div></div>
-          <div class="ind"><div class="ilbl">Tendencia</div><div class="ival" id="trnd" style="font-size:10px">--</div></div>
-        </div>
-        <canvas id="sp"></canvas>
-      </div>
-
-      <div class="fase-card buscando" id="fase-card">
-        <div>
-          <div class="fase-label">Estado del bot</div>
-          <div class="fase-val buscando" id="fase-val">🔍 Buscando entrada...</div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px" id="fase-sub">Revisando cada 2 minutos</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Última sync</div>
-          <div style="font-family:var(--mono);font-size:11px;margin-top:2px" id="last-sync">--</div>
-        </div>
-      </div>
-
-      <div class="port-card">
+      <!-- Resumen global -->
+      <div class="global-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div class="stitle">💰 Portfolio</div>
-          <button class="reset-btn" onclick="resetCurrent()">Reset</button>
+          <div class="stitle">📊 Resumen del ejercicio</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div id="sync-dot-main" class="sync-dot ok"></div>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="last-sync">--</span>
+          </div>
         </div>
-        <div class="port-grid">
-          <div class="port-item"><div class="port-lbl">Cash USD</div><div class="port-val" id="port-cash" style="color:var(--green)">$100.00</div></div>
-          <div class="port-item"><div class="port-lbl">Valor cripto</div><div class="port-val" id="port-btc">$0.00</div></div>
+        <div class="global-grid">
+          <div class="global-item">
+            <div class="global-lbl">Capital inicial</div>
+            <div class="global-val" id="d-starting" style="color:var(--muted)">$600.00</div>
+          </div>
+          <div class="global-item">
+            <div class="global-lbl">Capital actual</div>
+            <div class="global-val" id="d-capital" style="color:var(--green)">$600.00</div>
+          </div>
+          <div class="global-item">
+            <div class="global-lbl">P&L Total</div>
+            <div class="global-val" id="d-pnl" style="color:var(--muted)">+$0.00</div>
+          </div>
+          <div class="global-item">
+            <div class="global-lbl">Rendimiento</div>
+            <div class="global-val" id="d-pct" style="color:var(--muted)">0.00%</div>
+          </div>
         </div>
-        <div class="port-pnl neu" id="port-pnl-card">
-          <div><div class="pnl-label">Total</div><div class="pnl-val" id="port-total">$100.00</div></div>
-          <div style="text-align:right"><div class="pnl-label">P&L Total</div><div class="pnl-val" id="port-pnl" style="color:var(--muted)">$0.00</div></div>
+        <!-- Barra de progreso P&L -->
+        <div style="margin-top:10px;background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">
+          <div id="d-bar" style="height:100%;border-radius:6px;background:var(--green);width:50%;transition:width .5s"></div>
         </div>
-        <div id="port-position" class="pos-badge none">Sin posición abierta</div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">En posición: <span id="d-active" style="color:var(--blue)">0</span>/6</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Win rate: <span id="d-wr" style="color:var(--yellow)">--%</span></span>
+        </div>
       </div>
 
-      <div class="stitle" style="margin-bottom:6px">Última señal Claude AI</div>
-      <div class="sc ESPERAR" id="sc">
-        <div class="sh">
-          <div class="sb2 ESPERAR" id="sbdg"><span id="semi">🟡</span><span id="stxt">ESPERAR</span></div>
-          <div class="cr"><svg viewBox="0 0 52 52" width="48" height="48"><circle class="trk" cx="26" cy="26" r="20"/><circle class="fil" id="carc" cx="26" cy="26" r="20" stroke="var(--yellow)" stroke-dasharray="125.6" stroke-dashoffset="125.6"/></svg><div class="cn" id="cnum">0</div></div>
-        </div>
-        <div class="sr" id="sreason">Sincronizando...</div>
-        <div class="smeta"><span class="tag" id="sorg">origen: --</span><span class="tag" id="stime">--:--</span></div>
+      <!-- Lista por cripto -->
+      <div class="stitle" style="margin-bottom:6px">Estado por cripto</div>
+      <div id="bot-crypto-list"><div class="ld"><div class="sp2"></div>Cargando...</div></div>
+
+      <!-- Dummy hidden elements para no romper funciones legacy -->
+      <div style="display:none">
+        <div id="albl"></div><div id="pval"></div><div id="ppct"></div>
+        <div id="rsi"></div><div id="ema"></div><div id="trnd"></div>
+        <canvas id="sp"></canvas>
+        <div id="fase-card"></div><div id="fase-val"></div><div id="fase-sub"></div>
+        <div id="port-cash"></div><div id="port-btc"></div><div id="port-total"></div>
+        <div id="port-pnl"></div><div id="port-pnl-card"></div><div id="port-position"></div>
+        <div id="sc"></div><div id="sbdg"></div><div id="semi"></div><div id="stxt"></div>
+        <div id="sreason"></div><div id="sorg"></div><div id="stime"></div>
+        <div id="carc"></div><div id="cnum"></div>
       </div>
     </div>
 
@@ -288,12 +292,6 @@
       </div>
       <div class="stitle" style="margin-top:2px">Historial</div>
       <div id="trades-list"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div></div>
-    </div>
-
-    <!-- ═══ SEÑALES ═══ -->
-    <div class="page" id="page-history">
-      <div class="stitle" id="signals-title">Señales — BTC</div>
-      <div class="hl" id="hl"><div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px;text-align:center">Sin señales.</div></div>
     </div>
 
     <!-- ═══ CONFIG ═══ -->
@@ -346,9 +344,6 @@
     </button>
     <button class="nb" id="nav-trades" onclick="sp('trades')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Trades
-    </button>
-    <button class="nb" id="nav-history" onclick="sp('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Señales
     </button>
     <button class="nb" id="nav-config" onclick="sp('config')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config
@@ -403,6 +398,7 @@ function sp(n) {
   document.getElementById('page-' + n).classList.add('active');
   document.getElementById('nav-' + n).classList.add('active');
   closeDropdown();
+  if (n === 'dashboard') renderBotDashboard();
   if (n === 'global') renderGlobal();
   if (n === 'trades') renderTrades();
   if (n === 'history') renderSignals();
@@ -522,6 +518,8 @@ async function syncAll() {
       updateCurrentView();
       updateSelectorHeader();
       renderDropdown();
+      renderBotDashboard();
+      renderGlobal();
       setSyncStatus('ok');
     }
   } catch(e) {
@@ -653,6 +651,87 @@ function renderGlobal() {
       <div style="text-align:right">
         <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${pnlColor}">${(pnl >= 0 ? '+' : '')}$${pnl.toFixed(2)}</div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">$${total.toFixed(2)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render Bot Dashboard (resumen global en página principal) ─
+function renderBotDashboard() {
+  let totalStart = 0, totalCap = 0, totalPnl = 0, activeCount = 0, wins = 0, totalTrades = 0;
+
+  ALL_CRYPTOS.forEach(c => {
+    const s = ALL_STATES[c.sym];
+    if (!s) return;
+    const price = PRICES[c.sym] || 0;
+    const total = s.cash + s.btcQty * price;
+    const starting = s.startingCapital || s.config?.capital || 100;
+    totalStart += starting;
+    totalCap += total;
+    totalPnl += total - starting;
+    if (s.fase === 'EN_POSICION') activeCount++;
+    const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA');
+    wins += closed.filter(t => t.pnl > 0).length;
+    totalTrades += closed.length;
+  });
+
+  const pct = totalStart > 0 ? ((totalPnl / totalStart) * 100) : 0;
+  const wr = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(0) + '%' : '--%';
+
+  const pnlColor = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--muted)';
+  const pctColor = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--muted)';
+
+  const pnlEl = document.getElementById('d-pnl');
+  if (pnlEl) { pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2); pnlEl.style.color = pnlColor; }
+  const capEl = document.getElementById('d-capital');
+  if (capEl) { capEl.textContent = '$' + totalCap.toFixed(2); capEl.style.color = totalCap >= totalStart ? 'var(--green)' : 'var(--red)'; }
+  const startEl = document.getElementById('d-starting');
+  if (startEl) startEl.textContent = '$' + totalStart.toFixed(2);
+  const pctEl = document.getElementById('d-pct');
+  if (pctEl) { pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'; pctEl.style.color = pctColor; }
+  const activeEl = document.getElementById('d-active');
+  if (activeEl) activeEl.textContent = activeCount;
+  const wrEl = document.getElementById('d-wr');
+  if (wrEl) wrEl.textContent = wr;
+
+  // Progress bar — 50% = neutral, >50% = ganancia, <50% = pérdida
+  const barEl = document.getElementById('d-bar');
+  if (barEl) {
+    const barPct = Math.min(100, Math.max(0, 50 + pct * 5));
+    barEl.style.width = barPct + '%';
+    barEl.style.background = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // Per-crypto cards
+  const list = document.getElementById('bot-crypto-list');
+  if (!list || !ALL_CRYPTOS.length) return;
+  const colorMap = { BTC:'#F7931A',ETH:'#627EEA',BNB:'#F3BA2F',SOL:'#9945FF',XRP:'#00AAE4',ADA:'#0033AD' };
+
+  list.innerHTML = ALL_CRYPTOS.map(c => {
+    const s = ALL_STATES[c.sym];
+    const price = PRICES[c.sym] || 0;
+    const total = s ? s.cash + s.btcQty * price : 100;
+    const starting = s ? (s.startingCapital || s.config?.capital || 100) : 100;
+    const pnl = total - starting;
+    const pct2 = starting > 0 ? ((pnl / starting) * 100).toFixed(2) : '0.00';
+    const fase = s ? (s.fase === 'EN_POSICION' ? '📈 En posición' : '🔍 Buscando') : '--';
+    const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
+    const borderColor = pnl > 0 ? 'rgba(0,255,136,0.2)' : pnl < 0 ? 'rgba(255,56,96,0.2)' : 'var(--border)';
+    const cc = colorMap[c.short] || 'var(--muted)';
+    const lastSignal = s && s.signalHistory && s.signalHistory[0];
+    const signalDot = lastSignal ? (lastSignal.accion === 'COMPRAR' ? '🟢' : lastSignal.accion === 'VENDER' ? '🔴' : '🟡') : '⚪';
+
+    return `<div style="background:var(--bg2);border:1px solid ${borderColor};border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;border-radius:9px;background:${cc}22;color:${cc};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700">${c.short}</div>
+      <div>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700">${c.name}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">${fase} ${signalDot}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${price > 0 ? '$' + price.toLocaleString('en-US',{maximumFractionDigits:4}) : '--'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${pnlColor}">${(pnl >= 0 ? '+' : '')}$${pnl.toFixed(2)}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:${pnlColor};margin-top:1px">${(pct2 >= 0 ? '+' : '')}${pct2}%</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">$${total.toFixed(2)}</div>
       </div>
     </div>`;
   }).join('');
