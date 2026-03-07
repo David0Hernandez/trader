@@ -259,6 +259,17 @@
         </div>
       </div>
 
+      <!-- Botones compra/venta forzada -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button id="force-buy-btn" onclick="forceBuyAll()" style="padding:14px;border-radius:12px;border:none;background:rgba(0,255,136,.15);color:var(--green);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;border:1px solid rgba(0,255,136,.3)">
+          🟢 Comprar Todo
+        </button>
+        <button id="force-sell-btn" onclick="forceSellAll()" style="padding:14px;border-radius:12px;border:none;background:rgba(255,56,96,.15);color:var(--red);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;border:1px solid rgba(255,56,96,.3)">
+          🔴 Vender Todo
+        </button>
+      </div>
+      <div id="force-result" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.8"></div>
+
       <div class="stitle" style="margin-top:4px">Estado por cripto</div>
       <div id="global-list"><div class="ld"><div class="sp2"></div>Cargando...</div></div>
     </div>
@@ -798,16 +809,7 @@ async function testTelegram() {
     const d = await r.json(); btn.textContent = d.ok ? '✅ Enviado' : '❌ Error';
   } catch (e) { btn.textContent = '❌ Error'; }
   setTimeout(() => { btn.textContent = '🧪 Enviar prueba'; btn.disabled = false; }, 3000);
-  async function testTelegram() {
-  const btn = event.target; btn.textContent = 'Enviando...'; btn.disabled = true;
-  try {
-    const r = await fetch(`${PROXY}/telegram`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'COMPRAR', razon: '✅ TradeBot AI v3 — 16 criptos activo.', confianza: 8, precio: '70,000', simbolo: 'BTC/USDT' }) });
-    const d = await r.json(); btn.textContent = d.ok ? '✅ Enviado' : '❌ Error';
-  } catch (e) { btn.textContent = '❌ Error'; }
-  setTimeout(() => { btn.textContent = '🧪 Enviar prueba'; btn.disabled = false; }, 3000);
 }
-}
-
 
 function exportCSV() {
   const s = ALL_STATES[CURRENT_SYM];
@@ -847,6 +849,56 @@ function drawSpark(prices) {
   ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
   ctx.strokeStyle = color; ctx.lineWidth = 2 * devicePixelRatio; ctx.stroke();
   ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+}
+
+
+// ── Compra / Venta forzada ────────────────────────────────────
+async function forceBuyAll() {
+  if (!confirm('¿Comprar las 6 criptos al precio actual? ($100 cada una)')) return;
+  const btn = document.getElementById('force-buy-btn');
+  const res = document.getElementById('force-result');
+  btn.textContent = '⏳ Comprando...'; btn.disabled = true;
+  res.style.display = 'none';
+  try {
+    const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const d = await r.json();
+    if (d.ok) {
+      const lines = d.results.map(r =>
+        r.ok
+          ? `✅ ${r.short} — $${parseFloat(r.price).toLocaleString('en-US', { maximumFractionDigits: 2 })} · ${parseFloat(r.qty).toFixed(5)} unidades`
+          : `⚠️ ${r.sym.replace('USDT','')} — ${r.reason}`
+      ).join('<br>');
+      res.innerHTML = '<b>Resultado compras:</b><br>' + lines;
+      res.style.display = 'block';
+      await syncAll();
+      renderGlobal();
+    }
+  } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
+  btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
+}
+
+async function forceSellAll() {
+  if (!confirm('¿Vender todas las posiciones abiertas ahora?')) return;
+  const btn = document.getElementById('force-sell-btn');
+  const res = document.getElementById('force-result');
+  btn.textContent = '⏳ Vendiendo...'; btn.disabled = true;
+  res.style.display = 'none';
+  try {
+    const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const d = await r.json();
+    if (d.ok) {
+      const lines = d.results.map(r =>
+        r.ok
+          ? `${parseFloat(r.pnl) >= 0 ? '💰' : '💸'} ${r.short} — ${parseFloat(r.pnl) >= 0 ? '+' : ''}$${parseFloat(r.pnl).toFixed(2)} (${r.pnlPct}%)`
+          : `⚠️ ${r.sym.replace('USDT','')} — ${r.reason}`
+      ).join('<br>');
+      res.innerHTML = '<b>Resultado ventas:</b><br>' + lines;
+      res.style.display = 'block';
+      await syncAll();
+      renderGlobal();
+    }
+  } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
+  btn.textContent = '🔴 Vender Todo'; btn.disabled = false;
 }
 
 // ── Init ──────────────────────────────────────────────────────
