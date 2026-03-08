@@ -294,6 +294,38 @@
       <div id="trades-list"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div></div>
     </div>
 
+    <!-- ═══ MOMENTUM ═══ -->
+    <div class="page" id="page-momentum">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="stitle">🚀 Momentum Tokens</div>
+        <div style="display:flex;gap:6px">
+          <div id="m-sync-dot" class="sync-dot ok"></div>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="m-last-scan">--</span>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      <div class="global-card">
+        <div class="global-grid">
+          <div class="global-item"><div class="global-lbl">Capital</div><div class="global-val" id="m-capital" style="color:var(--green)">$100.00</div></div>
+          <div class="global-item"><div class="global-lbl">P&L Total</div><div class="global-val" id="m-pnl" style="color:var(--muted)">$0.00</div></div>
+          <div class="global-item"><div class="global-lbl">Posiciones</div><div class="global-val" id="m-open" style="color:var(--blue)">0/2</div></div>
+          <div class="global-item"><div class="global-lbl">Win Rate</div><div class="global-val" id="m-wr" style="color:var(--yellow)">--%</div></div>
+        </div>
+      </div>
+
+      <!-- Posiciones abiertas -->
+      <div class="stitle" style="margin-bottom:6px">Posiciones activas</div>
+      <div id="m-positions"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin posiciones abiertas.</div></div>
+
+      <!-- Historial -->
+      <div class="stitle" style="margin-top:4px;margin-bottom:6px">Historial</div>
+      <div id="m-trades"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones.</div></div>
+
+      <!-- Reset -->
+      <button class="sbtn" style="margin-top:4px;background:rgba(255,56,96,.1);color:var(--red);border:1px solid rgba(255,56,96,.2);font-size:11px" onclick="resetMomentum()">🗑 Reset Momentum</button>
+    </div>
+
     <!-- ═══ CONFIG ═══ -->
     <div class="page" id="page-config">
       <div class="stitle">Configuración Global</div>
@@ -344,6 +376,9 @@
     </button>
     <button class="nb" id="nav-trades" onclick="sp('trades')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Trades
+    </button>
+    <button class="nb" id="nav-momentum" onclick="sp('momentum')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>Rocket
     </button>
     <button class="nb" id="nav-config" onclick="sp('config')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config
@@ -399,6 +434,7 @@ function sp(n) {
   document.getElementById('nav-' + n).classList.add('active');
   closeDropdown();
   if (n === 'dashboard') renderBotDashboard();
+  if (n === 'momentum') syncMomentum();
   if (n === 'global') renderGlobal();
   if (n === 'trades') renderTrades();
   if (n === 'history') renderSignals();
@@ -1138,7 +1174,120 @@ async function init() {
 init();
 
 // Sync KV cada 30s, precios cada 15s, precios de todas cada 2 min
-setInterval(syncAll, 30000);  // sync KV cada 30s — esto actualiza precios también
+setInterval(syncAll, 30000);
+setInterval(syncMomentum, 30000); // sync momentum every 30s too
+
+// ── Momentum Functions ────────────────────────────────────────
+async function syncMomentum() {
+  try {
+    const r = await fetch(PROXY + '/momentum-status', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    const d = await r.json();
+    if (d.ok) renderMomentum(d);
+  } catch(e) {}
+}
+
+function renderMomentum(d) {
+  const closed = (d.trades || []).filter(t => t.status !== 'ABIERTA');
+  const wins   = closed.filter(t => t.pnl > 0).length;
+  const totalPnl = closed.reduce((a, t) => a + (t.pnl || 0), 0);
+  const wr = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
+
+  // Current value = cash + open positions value
+  const openPnl = (d.positions || []).reduce((a, p) => a + (p.pnl || 0), 0);
+  const totalCap = (d.cash || 0) + (d.positions || []).reduce((a, p) => a + p.capital + (p.pnl || 0), 0);
+  const pnlAll = totalCap - (d.startingCapital || 100);
+  const pnlColor = pnlAll > 0 ? 'var(--green)' : pnlAll < 0 ? 'var(--red)' : 'var(--muted)';
+
+  const capEl = document.getElementById('m-capital');
+  if (capEl) capEl.textContent = '$' + totalCap.toFixed(2);
+  const pnlEl = document.getElementById('m-pnl');
+  if (pnlEl) { pnlEl.textContent = (pnlAll >= 0 ? '+' : '') + '$' + pnlAll.toFixed(2); pnlEl.style.color = pnlColor; }
+  const openEl = document.getElementById('m-open');
+  if (openEl) openEl.textContent = (d.positions || []).length + '/2';
+  const wrEl = document.getElementById('m-wr');
+  if (wrEl) wrEl.textContent = wr;
+  const scanEl = document.getElementById('m-last-scan');
+  if (scanEl) scanEl.textContent = d.lastScan ? fmtDate(d.lastScan) : '--';
+
+  // Render open positions
+  const posEl = document.getElementById('m-positions');
+  if (posEl) {
+    if (!d.positions || !d.positions.length) {
+      posEl.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin posiciones abiertas — el bot está escaneando el mercado.</div>';
+    } else {
+      posEl.innerHTML = d.positions.map(p => {
+        const pnlPct = p.pnlPct || 0;
+        const pnl = p.pnl || 0;
+        const pc = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
+        const trailPct = p.maxPrice ? ((p.maxPrice - (p.currentPrice || p.entryPrice)) / p.maxPrice * 100).toFixed(1) : '0';
+        return `<div style="background:rgba(76,201,240,0.06);border:1px solid rgba(76,201,240,0.2);border-radius:12px;padding:14px">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-family:var(--mono);font-weight:700;font-size:13px">${p.sym.replace('USDT','/USDT')}</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">24h: +${p.change24h?.toFixed(1)}% · ${fmtDate(p.entryTime)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${pc}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+              <div style="font-family:var(--mono);font-size:10px;color:${pc}">${pnlPct >= 0 ? '+' : ''}${pnlPct}%</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Entrada</div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700">$${parseFloat(p.entryPrice).toFixed(4)}</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Actual</div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${pc}">$${p.currentPrice ? parseFloat(p.currentPrice).toFixed(4) : '--'}</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
+              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Máximo</div>
+              <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green)">$${p.maxPrice ? parseFloat(p.maxPrice).toFixed(4) : '--'}</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;background:var(--bg3);border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:9px;color:var(--muted)">
+            Trailing: cayó ${trailPct}% del máx · Stop Loss -10% · TP +30%
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Render trade history
+  const trEl = document.getElementById('m-trades');
+  if (trEl) {
+    const closedTrades = (d.trades || []).filter(t => t.status !== 'ABIERTA');
+    if (!closedTrades.length) {
+      trEl.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones cerradas todavía.</div>';
+    } else {
+      trEl.innerHTML = closedTrades.map(t => {
+        const isWin = t.pnl > 0;
+        const pc = isWin ? 'var(--green)' : 'var(--red)';
+        const bg = isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
+        const border = isWin ? 'rgba(0,255,136,0.2)' : 'rgba(255,56,96,0.2)';
+        return `<div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
+          <div>
+            <div style="font-family:var(--mono);font-size:12px;font-weight:700">${t.sym?.replace('USDT','/USDT')}</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">
+              $${parseFloat(t.entryPrice).toFixed(4)} → $${t.sellPrice ? parseFloat(t.sellPrice).toFixed(4) : '--'}
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${t.sellReason || '--'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${pc}">${t.pnl >= 0 ? '+' : ''}$${parseFloat(t.pnl).toFixed(2)}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:${pc}">${t.pnlPct >= 0 ? '+' : ''}${t.pnlPct}%</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+async function resetMomentum() {
+  if (!confirm('¿Resetear módulo momentum? Se borrarán todas las posiciones y trades.')) return;
+  await fetch(PROXY + '/momentum-reset', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+  await syncMomentum();
+}  // sync KV cada 30s — esto actualiza precios también
 </script>
 </body>
 </html>
