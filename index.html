@@ -18,8 +18,6 @@
     .logo-text{font-family:var(--sans);font-weight:800;font-size:16px;letter-spacing:-.5px}.logo-text span{color:var(--green)}
     .sdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-
-    /* ── CRYPTO SELECTOR ── */
     .crypto-selector{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;flex-shrink:0}
     .cs-active{display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-tap-highlight-color:transparent}
     .cs-left{display:flex;align-items:center;gap:10px}
@@ -30,8 +28,6 @@
     .cs-pnl{font-family:var(--mono);font-size:13px;font-weight:700}
     .cs-arrow{color:var(--muted);font-size:12px;transition:transform .3s}
     .cs-arrow.open{transform:rotate(180deg)}
-
-    /* Dropdown */
     .cs-dropdown{display:none;margin-top:10px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
     .cs-dropdown.open{display:block}
     .cs-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg3);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;border-bottom:1px solid var(--border)}
@@ -46,11 +42,8 @@
     .cs-item-pnl{font-family:var(--mono);font-size:12px;font-weight:700}
     .cs-item-fase{font-family:var(--mono);font-size:9px;margin-top:2px}
     .divider-label{padding:6px 14px;background:var(--bg);font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)}
-
     main{flex:1;overflow-y:auto;padding:14px;padding-bottom:calc(75px + var(--sb));display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
     main::-webkit-scrollbar{width:0}
-
-    /* Price card */
     .pc{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
     .pc::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(0,255,136,.08),transparent 70%);pointer-events:none}
     .plabel{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:5px}
@@ -62,8 +55,6 @@
     .ilbl{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
     .ival{font-family:var(--mono);font-size:14px;font-weight:700;margin-top:2px}
     canvas#sp{width:100%;height:55px;margin-top:10px}
-
-    /* Portfolio */
     .port-card{background:linear-gradient(135deg,rgba(0,255,136,.05),var(--bg2));border:1px solid rgba(0,255,136,.2);border-radius:14px;padding:16px}
     .port-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
     .port-item{background:var(--bg3);border-radius:9px;padding:11px}
@@ -78,16 +69,12 @@
     .pos-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-family:var(--mono);font-size:10px;font-weight:700;width:100%}
     .pos-badge.long{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.3)}
     .pos-badge.none{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
-
-    /* Fase */
     .fase-card{border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border)}
     .fase-card.buscando{background:rgba(255,209,102,.04);border-color:rgba(255,209,102,.25)}
     .fase-card.posicion{background:rgba(0,255,136,.04);border-color:rgba(0,255,136,.25)}
     .fase-label{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
     .fase-val{font-family:var(--mono);font-size:12px;font-weight:700;margin-top:2px}
     .fase-val.buscando{color:var(--yellow)}.fase-val.posicion{color:var(--green)}
-
-    /* Signal */
     .sc{border-radius:14px;padding:18px;border:1px solid var(--border);transition:all .4s}
     .sc.COMPRAR{background:linear-gradient(135deg,rgba(0,255,136,.07),var(--bg2));border-color:rgba(0,255,136,.3)}
     .sc.VENDER{background:linear-gradient(135deg,rgba(255,56,96,.07),var(--bg2));border-color:rgba(255,56,96,.3)}
@@ -102,15 +89,11 @@
     .smeta{display:flex;gap:7px;flex-wrap:wrap}
     .tag{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
     .stitle{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
-
-    /* Resumen global */
     .global-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px}
     .global-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
     .global-item{background:var(--bg3);border-radius:10px;padding:11px;text-align:center}
     .global-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
     .global-val{font-family:var(--mono);font-size:18px;font-weight:700;margin-top:4px}
-
-    /* Nav */
     nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(10,10,15,.95);border-top:1px solid var(--border);padding-bottom:var(--sb);backdrop-filter:blur(20px);z-index:100}
     .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;border:none;background:none;color:var(--muted);font-family:var(--mono);font-size:8px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;transition:color .2s;-webkit-tap-highlight-color:transparent}
     .nb.active{color:var(--green)}.nb svg{width:17px;height:17px}
@@ -136,8 +119,6 @@
     .sync-dot.ok{background:var(--green);box-shadow:0 0 5px var(--green)}
     .sync-dot.syncing{background:var(--yellow);animation:pulse 1s infinite}
     .sync-dot.err{background:var(--red)}
-
-    /* Trades */
     .trade-row{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:9px}
     .trade-row.win{border-left:3px solid var(--green)}.trade-row.loss{border-left:3px solid var(--red)}.trade-row.open{border-left:3px solid var(--yellow)}
     .tr-header{display:flex;align-items:center;justify-content:space-between}
@@ -174,7 +155,6 @@
     </div>
   </header>
 
-  <!-- ── SELECTOR DE CRIPTO ── -->
   <div class="crypto-selector">
     <div class="cs-active" onclick="toggleDropdown()">
       <div class="cs-left">
@@ -193,10 +173,8 @@
   </div>
 
   <main>
-    <!-- ═══ DASHBOARD ═══ -->
+    <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
-
-      <!-- Resumen global -->
       <div class="global-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div class="stitle">📊 Resumen del ejercicio</div>
@@ -208,11 +186,11 @@
         <div class="global-grid">
           <div class="global-item">
             <div class="global-lbl">Capital inicial</div>
-            <div class="global-val" id="d-starting" style="color:var(--muted)">$1,200.00</div>
+            <div class="global-val" id="d-starting" style="color:var(--muted)">$600.00</div>
           </div>
           <div class="global-item">
             <div class="global-lbl">Capital actual</div>
-            <div class="global-val" id="d-capital" style="color:var(--green)">$1,200.00</div>
+            <div class="global-val" id="d-capital" style="color:var(--green)">$600.00</div>
           </div>
           <div class="global-item">
             <div class="global-lbl">P&L Total</div>
@@ -223,7 +201,6 @@
             <div class="global-val" id="d-pct" style="color:var(--muted)">0.00%</div>
           </div>
         </div>
-        <!-- Barra de progreso P&L -->
         <div style="margin-top:10px;background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">
           <div id="d-bar" style="height:100%;border-radius:6px;background:var(--green);width:50%;transition:width .5s"></div>
         </div>
@@ -232,12 +209,8 @@
           <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">Win rate: <span id="d-wr" style="color:var(--yellow)">--%</span></span>
         </div>
       </div>
-
-      <!-- Lista por cripto -->
       <div class="stitle" style="margin-bottom:6px">Estado por cripto</div>
       <div id="bot-crypto-list"><div class="ld"><div class="sp2"></div>Cargando...</div></div>
-
-      <!-- Dummy hidden elements para no romper funciones legacy -->
       <div style="display:none">
         <div id="albl"></div><div id="pval"></div><div id="ppct"></div>
         <div id="rsi"></div><div id="ema"></div><div id="trnd"></div>
@@ -251,34 +224,31 @@
       </div>
     </div>
 
-    <!-- ═══ RESUMEN GLOBAL ═══ -->
+    <!-- GLOBAL -->
     <div class="page" id="page-global">
-      <div class="stitle">Resumen Global — 16 Criptos</div>
+      <div class="stitle">Resumen Global — 3 Criptos</div>
       <div class="global-card">
         <div class="global-grid">
           <div class="global-item"><div class="global-lbl">P&L Total</div><div class="global-val" id="g-pnl" style="color:var(--muted)">$0.00</div></div>
-          <div class="global-item"><div class="global-lbl">Capital Total</div><div class="global-val" id="g-capital" style="color:var(--green)">$1,600</div></div>
+          <div class="global-item"><div class="global-lbl">Capital Total</div><div class="global-val" id="g-capital" style="color:var(--green)">$600</div></div>
           <div class="global-item"><div class="global-lbl">En Posición</div><div class="global-val" id="g-active" style="color:var(--blue)">0</div></div>
           <div class="global-item"><div class="global-lbl">Win Rate</div><div class="global-val" id="g-wr" style="color:var(--yellow)">--%</div></div>
         </div>
       </div>
-
-      <!-- Botones compra/venta forzada -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <button id="force-buy-btn" onclick="forceBuyAll()" style="padding:14px;border-radius:12px;border:none;background:rgba(0,255,136,.15);color:var(--green);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;border:1px solid rgba(0,255,136,.3)">
+        <button id="force-buy-btn" onclick="forceBuyAll()" style="padding:14px;border-radius:12px;border:1px solid rgba(0,255,136,.3);background:rgba(0,255,136,.15);color:var(--green);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer">
           🟢 Comprar Todo
         </button>
-        <button id="force-sell-btn" onclick="forceSellAll()" style="padding:14px;border-radius:12px;border:none;background:rgba(255,56,96,.15);color:var(--red);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;border:1px solid rgba(255,56,96,.3)">
+        <button id="force-sell-btn" onclick="forceSellAll()" style="padding:14px;border-radius:12px;border:1px solid rgba(255,56,96,.3);background:rgba(255,56,96,.15);color:var(--red);font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer">
           🔴 Vender Todo
         </button>
       </div>
       <div id="force-result" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.8"></div>
-
       <div class="stitle" style="margin-top:4px">Estado por cripto</div>
       <div id="global-list"><div class="ld"><div class="sp2"></div>Cargando...</div></div>
     </div>
 
-    <!-- ═══ TRADES ═══ -->
+    <!-- TRADES -->
     <div class="page" id="page-trades">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="stitle" id="trades-title">Trades — BTC</div>
@@ -286,7 +256,7 @@
       </div>
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-lbl">P&L Total</div><div class="stat-val" id="st-pnl" style="color:var(--muted)">$0.00</div></div>
-        <div class="stat-card"><div class="stat-lbl">Capital</div><div class="stat-val" id="st-capital" style="color:var(--green)">$100.00</div></div>
+        <div class="stat-card"><div class="stat-lbl">Capital</div><div class="stat-val" id="st-capital" style="color:var(--green)">$600.00</div></div>
         <div class="stat-card"><div class="stat-lbl">Operaciones</div><div class="stat-val" id="st-ops" style="color:var(--blue)">0</div></div>
         <div class="stat-card"><div class="stat-lbl">Win Rate</div><div class="stat-val" id="st-win" style="color:var(--yellow)">--%</div></div>
       </div>
@@ -294,7 +264,7 @@
       <div id="trades-list"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div></div>
     </div>
 
-    <!-- ═══ MOMENTUM ═══ -->
+    <!-- MOMENTUM -->
     <div class="page" id="page-momentum">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div class="stitle">🚀 Momentum Tokens</div>
@@ -303,8 +273,6 @@
           <span style="font-family:var(--mono);font-size:9px;color:var(--muted)" id="m-last-scan">--</span>
         </div>
       </div>
-
-      <!-- Resumen -->
       <div class="global-card">
         <div class="global-grid">
           <div class="global-item"><div class="global-lbl">Capital</div><div class="global-val" id="m-capital" style="color:var(--green)">$100.00</div></div>
@@ -313,24 +281,18 @@
           <div class="global-item"><div class="global-lbl">Win Rate</div><div class="global-val" id="m-wr" style="color:var(--yellow)">--%</div></div>
         </div>
       </div>
-
-      <!-- Posiciones abiertas -->
       <div class="stitle" style="margin-bottom:6px">Posiciones activas</div>
       <div id="m-positions"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin posiciones abiertas.</div></div>
-
-      <!-- Historial -->
       <div class="stitle" style="margin-top:4px;margin-bottom:6px">Historial</div>
       <div id="m-trades"><div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones.</div></div>
-
-      <!-- Reset -->
       <button class="sbtn" style="margin-top:4px;background:rgba(255,56,96,.1);color:var(--red);border:1px solid rgba(255,56,96,.2);font-size:11px" onclick="resetMomentum()">🗑 Reset Momentum</button>
     </div>
 
-    <!-- ═══ CONFIG ═══ -->
+    <!-- CONFIG -->
     <div class="page" id="page-config">
       <div class="stitle">Configuración Global</div>
       <div class="cfg">
-        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.6">Los parámetros aplican a las 16 criptos. Todo se guarda en la nube y es igual en cualquier dispositivo.</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.6">Los parámetros aplican a las 3 criptos. Todo se guarda en la nube y es igual en cualquier dispositivo.</div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
           <div id="sync-dot-cfg" class="sync-dot ok"></div>
           <span style="font-family:var(--mono);font-size:11px" id="sync-txt">Conectado</span>
@@ -360,7 +322,7 @@
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:8px">
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">🔄 Nuevo ejercicio</div>
         <div style="margin-bottom:10px">
-          <button class="sbtn" style="width:100%;background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3);font-size:14px;padding:14px" onclick="startFresh(100)">🚀 Nuevo ejercicio — $600 total ($100 × 6 criptos)</button>
+          <button class="sbtn" style="width:100%;background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3);font-size:14px;padding:14px" onclick="startFresh(100)">🚀 Nuevo ejercicio — $300 total ($100 × 3 criptos)</button>
         </div>
         <button class="sbtn" style="width:100%;background:rgba(255,56,96,.1);color:var(--red);border:1px solid rgba(255,56,96,.2);font-size:11px" onclick="resetAll()">🗑 Reset sin cambiar capital</button>
       </div>
@@ -389,44 +351,23 @@
 <script>
 const PROXY = 'https://solitary-forest-949f.1111davidh.workers.dev';
 
-// Estado
 let CURRENT_SYM = 'BTCUSDT';
-let ALL_STATES = {};   // {sym: state}
-let ALL_CRYPTOS = [];  // lista de {sym, name, short}
-let PRICES = {};       // {sym: price}
+let ALL_STATES = {};
+let ALL_CRYPTOS = [];
+let PRICES = {};
 
-// Cache en sessionStorage — persiste durante la sesión del browser
-// Se actualiza cada vez que llega data del KV
-function saveCache(sym, state) {
-  try { sessionStorage.setItem('tb_state_' + sym, JSON.stringify(state)); } catch(e) {}
-}
-function loadCache(sym) {
-  try {
-    const raw = sessionStorage.getItem('tb_state_' + sym);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
-function saveCryptoList(cryptos) {
-  try { sessionStorage.setItem('tb_cryptos', JSON.stringify(cryptos)); } catch(e) {}
-}
-function loadCryptoList() {
-  try {
-    const raw = sessionStorage.getItem('tb_cryptos');
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
-}
+function saveCache(sym, state) { try { sessionStorage.setItem('tb_state_' + sym, JSON.stringify(state)); } catch(e) {} }
+function loadCache(sym) { try { const raw = sessionStorage.getItem('tb_state_' + sym); return raw ? JSON.parse(raw) : null; } catch(e) { return null; } }
+function saveCryptoList(cryptos) { try { sessionStorage.setItem('tb_cryptos', JSON.stringify(cryptos)); } catch(e) {} }
+function loadCryptoList() { try { const raw = sessionStorage.getItem('tb_cryptos'); return raw ? JSON.parse(raw) : []; } catch(e) { return []; } }
 
 const CRYPTO_COLORS = {
   BTC:'#f7931a', ETH:'#627eea', BNB:'#f3ba2f', SOL:'#9945ff',
   XRP:'#00aae4', ADA:'#0033ad', DOGE:'#c2a633', AVAX:'#e84142',
   DOT:'#e6007a', LINK:'#2a5ada', MATIC:'#8247e5', DEFAULT:'#00ff88'
 };
+function cryptoColor(short) { return CRYPTO_COLORS[short] || CRYPTO_COLORS.DEFAULT; }
 
-function cryptoColor(short) {
-  return CRYPTO_COLORS[short] || CRYPTO_COLORS.DEFAULT;
-}
-
-// ── Navegación ───────────────────────────────────────────────
 function sp(n) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
@@ -437,10 +378,8 @@ function sp(n) {
   if (n === 'momentum') syncMomentum();
   if (n === 'global') renderGlobal();
   if (n === 'trades') renderTrades();
-  if (n === 'history') renderSignals();
 }
 
-// ── Dropdown selector ────────────────────────────────────────
 function toggleDropdown() {
   const dd = document.getElementById('cs-dropdown');
   const arrow = document.getElementById('cs-arrow');
@@ -455,20 +394,8 @@ function closeDropdown() {
 function renderDropdown() {
   const dd = document.getElementById('cs-dropdown');
   if (!ALL_CRYPTOS.length) return;
-
-  const fixed = ALL_CRYPTOS.slice(0, 6);
-  const growth = ALL_CRYPTOS.slice(6);
-
-  let html = '';
-
-  html += '<div class="divider-label">📊 Top por capitalización</div>';
-  fixed.forEach(c => html += cryptoItem(c));
-
-  if (growth.length) {
-    html += '<div class="divider-label">🚀 Top 5 crecimiento 5 días</div>';
-    growth.forEach(c => html += cryptoItem(c));
-  }
-
+  let html = '<div class="divider-label">📊 BTC · ETH · BNB</div>';
+  ALL_CRYPTOS.forEach(c => html += cryptoItem(c));
   dd.innerHTML = html;
 }
 
@@ -482,12 +409,10 @@ function cryptoItem(c) {
   const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
   const isActive = c.sym === CURRENT_SYM;
   const color = cryptoColor(c.short);
-  const growth = c.growth5d ? ` · +${c.growth5d}% 5d` : '';
-
   return `<div class="cs-item ${isActive ? 'active' : ''}" onclick="selectCrypto('${c.sym}')">
     <div class="cs-item-badge" style="background:${color}22;color:${color}">${c.short}</div>
     <div class="cs-item-info">
-      <div class="cs-item-name">${c.name}${growth}</div>
+      <div class="cs-item-name">${c.name}</div>
       <div class="cs-item-sub">${fase}</div>
     </div>
     <div class="cs-item-right">
@@ -501,9 +426,7 @@ function selectCrypto(sym) {
   CURRENT_SYM = sym;
   closeDropdown();
   updateCurrentView();
-  fetchPrice(sym);
   document.getElementById('trades-title').textContent = 'Trades — ' + symToShort(sym);
-  document.getElementById('signals-title').textContent = 'Señales — ' + symToShort(sym);
 }
 
 function symToShort(sym) {
@@ -519,7 +442,6 @@ function updateSelectorHeader() {
   const pnl = s ? total - (s.startingCapital || 100) : 0;
   const fase = s ? (s.fase === 'EN_POSICION' ? '📈 En posición' : '🔍 Buscando') : '--';
   const color = cryptoColor(c.short);
-
   document.getElementById('cs-badge').textContent = c.short;
   document.getElementById('cs-badge').style.background = color + '22';
   document.getElementById('cs-badge').style.color = color;
@@ -530,27 +452,15 @@ function updateSelectorHeader() {
   pnlEl.style.color = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
 }
 
-// ── Sincronización con KV ────────────────────────────────────
 async function syncAll() {
   setSyncStatus('syncing');
   try {
-    const r = await fetch(PROXY + '/status-all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
+    const r = await fetch(PROXY + '/status-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
-      if (d.cryptos && d.cryptos.length > 0) {
-        ALL_CRYPTOS = d.cryptos;
-        saveCryptoList(d.cryptos);
-      }
-      if (d.states && d.states.length > 0) {
-        d.states.forEach(s => {
-          ALL_STATES[s.sym] = s;
-          saveCache(s.sym, s);  // guardar en cache
-        });
-      }
+      if (d.cryptos && d.cryptos.length > 0) { ALL_CRYPTOS = d.cryptos; saveCryptoList(d.cryptos); }
+      if (d.states && d.states.length > 0) { d.states.forEach(s => { ALL_STATES[s.sym] = s; saveCache(s.sym, s); }); }
+      if (d.prices) Object.assign(PRICES, d.prices);
       updateCurrentView();
       updateSelectorHeader();
       renderDropdown();
@@ -558,102 +468,67 @@ async function syncAll() {
       renderGlobal();
       setSyncStatus('ok');
     }
-  } catch(e) {
-    setSyncStatus('err');
-    console.warn('syncAll falló:', e.message);
-  }
-}
-
-async function syncCurrent() {
-  try {
-    const r = await fetch(`${PROXY}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sym: CURRENT_SYM }) });
-    const d = await r.json();
-    if (d.ok) {
-      ALL_STATES[CURRENT_SYM] = d.state;
-      updateCurrentView();
-      updateSelectorHeader();
-      renderDropdown();
-    }
-  } catch (e) {}
+  } catch(e) { setSyncStatus('err'); }
 }
 
 function updateCurrentView() {
   const s = ALL_STATES[CURRENT_SYM];
   const c = ALL_CRYPTOS.find(x => x.sym === CURRENT_SYM) || { short: symToShort(CURRENT_SYM) };
   if (!s) return;
-
   const price = PRICES[CURRENT_SYM] || 0;
   const btcVal = s.btcQty * price;
   const total = s.cash + btcVal;
   const pnl = total - (s.startingCapital || 100);
-
   document.getElementById('albl').textContent = c.short + ' / USDT';
   document.getElementById('port-cash').textContent = '$' + s.cash.toFixed(2);
   document.getElementById('port-btc').textContent = s.btcQty > 0 ? '$' + btcVal.toFixed(2) + ' · ' + s.btcQty.toFixed(5) + ' ' + c.short : '$0.00';
   document.getElementById('port-total').textContent = '$' + total.toFixed(2);
-
   const pe = document.getElementById('port-pnl');
   pe.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
   pe.style.color = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
   document.getElementById('port-pnl-card').className = 'port-pnl ' + (pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : 'neu');
-
   const posEl = document.getElementById('port-position');
   if (s.btcQty > 0 && price > 0) {
     const unreal = (price - s.entryPrice) * s.btcQty;
     const unrealPct = ((price - s.entryPrice) / s.entryPrice * 100).toFixed(2);
     posEl.className = 'pos-badge long';
-    posEl.textContent = `📈 ${s.btcQty.toFixed(5)} ${c.short} · $${s.entryPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} · ${unreal >= 0 ? '+' : ''}$${unreal.toFixed(2)} (${unrealPct}%)`;
+    posEl.textContent = `📈 ${s.btcQty.toFixed(5)} ${c.short} · $${s.entryPrice.toLocaleString('en-US',{maximumFractionDigits:0})} · ${unreal >= 0 ? '+' : ''}$${unreal.toFixed(2)} (${unrealPct}%)`;
   } else {
     posEl.className = 'pos-badge none';
     posEl.textContent = 'Sin posición abierta';
   }
-
   const faseCard = document.getElementById('fase-card');
   const faseVal = document.getElementById('fase-val');
   const faseSub = document.getElementById('fase-sub');
   if (s.fase === 'EN_POSICION') {
-    faseCard.className = 'fase-card posicion';
-    faseVal.className = 'fase-val posicion';
+    faseCard.className = 'fase-card posicion'; faseVal.className = 'fase-val posicion';
     faseVal.textContent = '📈 En posición activa';
     const mins = s.entryTime ? Math.round((Date.now() - new Date(s.entryTime).getTime()) / 60000) : 0;
     faseSub.textContent = `Buscando mejor salida · ${mins} min`;
   } else {
-    faseCard.className = 'fase-card buscando';
-    faseVal.className = 'fase-val buscando';
+    faseCard.className = 'fase-card buscando'; faseVal.className = 'fase-val buscando';
     faseVal.textContent = '🔍 Buscando entrada...';
     faseSub.textContent = 'Revisando cada 2 minutos';
   }
-
-  if (s.lastUpdate) {
-    document.getElementById('last-sync').textContent = new Date(s.lastUpdate).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-
+  if (s.lastUpdate) document.getElementById('last-sync').textContent = new Date(s.lastUpdate).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   if (s.signalHistory && s.signalHistory.length > 0) {
     const sig = s.signalHistory[0];
     updateSignalUI({ ...sig, time: new Date(sig.time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) });
   }
 }
 
-// ── Render Global ────────────────────────────────────────────
 function renderGlobal() {
   let totalPnl = 0, totalCap = 0, activeCount = 0, wins = 0, totalTrades = 0;
-
-  let totalStarting = 0;
   ALL_CRYPTOS.forEach(c => {
-    const s = ALL_STATES[c.sym];
-    if (!s) return;
+    const s = ALL_STATES[c.sym]; if (!s) return;
     const price = PRICES[c.sym] || 0;
     const total = s.cash + s.btcQty * price;
     const starting = s.startingCapital || s.config?.capital || 100;
-    totalStarting += starting;
-    totalPnl += total - starting;
-    totalCap += total;
+    totalPnl += total - starting; totalCap += total;
     if (s.fase === 'EN_POSICION') activeCount++;
     const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA');
-    wins += closed.filter(t => t.pnl > 0).length;
-    totalTrades += closed.length;
+    wins += closed.filter(t => t.pnl > 0).length; totalTrades += closed.length;
   });
-
   const wr = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(0) + '%' : '--%';
   const pnlEl = document.getElementById('g-pnl');
   pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
@@ -661,27 +536,19 @@ function renderGlobal() {
   document.getElementById('g-capital').textContent = '$' + totalCap.toFixed(2);
   document.getElementById('g-active').textContent = activeCount;
   document.getElementById('g-wr').textContent = wr;
-
   const list = document.getElementById('global-list');
-  if (!ALL_CRYPTOS.length) {
-    list.innerHTML = '<div class="ld"><div class="sp2"></div>Cargando...</div>';
-    return;
-  }
-
+  if (!ALL_CRYPTOS.length) { list.innerHTML = '<div class="ld"><div class="sp2"></div>Cargando...</div>'; return; }
   list.innerHTML = ALL_CRYPTOS.map(c => {
-    const s = ALL_STATES[c.sym];
-    const price = PRICES[c.sym] || 0;
+    const s = ALL_STATES[c.sym]; const price = PRICES[c.sym] || 0;
     const total = s ? s.cash + s.btcQty * price : 100;
     const pnl = s ? total - (s.startingCapital || 100) : 0;
     const fase = s ? (s.fase === 'EN_POSICION' ? '📈 En posición' : '🔍 Buscando') : '--';
     const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
     const color = cryptoColor(c.short);
-    const growth = c.growth5d ? `<span style="color:var(--green);font-size:9px"> +${c.growth5d}% 5d</span>` : '';
-
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="selectCrypto('${c.sym}');sp('dashboard')">
       <div style="width:36px;height:36px;border-radius:9px;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0">${c.short}</div>
       <div style="flex:1">
-        <div style="font-family:var(--mono);font-size:12px;font-weight:700">${c.name}${growth}</div>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700">${c.name}</div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px">${fase}</div>
       </div>
       <div style="text-align:right">
@@ -692,42 +559,27 @@ function renderGlobal() {
   }).join('');
 }
 
-// ── Render Bot Dashboard (resumen global en página principal) ─
 function renderBotDashboard() {
   let totalStart = 0, totalCap = 0, totalPnl = 0, activeCount = 0, wins = 0, totalTrades = 0;
-
   ALL_CRYPTOS.forEach(c => {
-    const s = ALL_STATES[c.sym];
-    if (!s) return;
+    const s = ALL_STATES[c.sym]; if (!s) return;
     const price = PRICES[c.sym] || 0;
-
-    // Long
-    const longVal   = s.cash + s.btcQty * price;
+    const longVal = s.cash + s.btcQty * price;
     const longStart = s.startingCapital || s.config?.capital || 100;
-
-    // Short: devuelve capital original +/- P&L
     const shortUnreal = s.shortQty > 0 ? s.shortQty * ((s.shortEntryPrice || 0) - price) : 0;
-    const shortVal    = (s.cashShort || 0) + (s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice || 0) + shortUnreal : 0);
-    const shortStart  = s.startingCapitalShort || s.config?.capital || 100;
-
-    totalStart += longStart + shortStart;
-    totalCap   += longVal + shortVal;
-    totalPnl   += (longVal - longStart) + (shortVal - shortStart);
-
+    const shortVal = (s.cashShort || 0) + (s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice || 0) + shortUnreal : 0);
+    const shortStart = s.startingCapitalShort || s.config?.capital || 100;
+    totalStart += longStart + shortStart; totalCap += longVal + shortVal;
+    totalPnl += (longVal - longStart) + (shortVal - shortStart);
     if (s.fase === 'EN_POSICION') activeCount++;
     if (s.faseShort === 'EN_SHORT') activeCount++;
-
     const closed = (s.trades || []).filter(t => t.status !== 'ABIERTA' && t.status !== 'ABIERTA_SHORT');
-    wins += closed.filter(t => t.pnl > 0).length;
-    totalTrades += closed.length;
+    wins += closed.filter(t => t.pnl > 0).length; totalTrades += closed.length;
   });
-
   const pct = totalStart > 0 ? ((totalPnl / totalStart) * 100) : 0;
   const wr = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(0) + '%' : '--%';
-
   const pnlColor = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--muted)';
   const pctColor = pct > 0 ? 'var(--green)' : pct < 0 ? 'var(--red)' : 'var(--muted)';
-
   const pnlEl = document.getElementById('d-pnl');
   if (pnlEl) { pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2); pnlEl.style.color = pnlColor; }
   const capEl = document.getElementById('d-capital');
@@ -736,39 +588,22 @@ function renderBotDashboard() {
   if (startEl) startEl.textContent = '$' + totalStart.toFixed(2);
   const pctEl = document.getElementById('d-pct');
   if (pctEl) { pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%'; pctEl.style.color = pctColor; }
-  const activeEl = document.getElementById('d-active');
-  if (activeEl) activeEl.textContent = activeCount;
-  const wrEl = document.getElementById('d-wr');
-  if (wrEl) wrEl.textContent = wr;
-
-  // Progress bar — 50% = neutral, >50% = ganancia, <50% = pérdida
+  const activeEl = document.getElementById('d-active'); if (activeEl) activeEl.textContent = activeCount;
+  const wrEl = document.getElementById('d-wr'); if (wrEl) wrEl.textContent = wr;
   const barEl = document.getElementById('d-bar');
-  if (barEl) {
-    const barPct = Math.min(100, Math.max(0, 50 + pct * 5));
-    barEl.style.width = barPct + '%';
-    barEl.style.background = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
-  }
-
-  // Per-crypto cards
+  if (barEl) { barEl.style.width = Math.min(100, Math.max(0, 50 + pct * 5)) + '%'; barEl.style.background = totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
   const list = document.getElementById('bot-crypto-list');
   if (!list || !ALL_CRYPTOS.length) return;
-  const colorMap = { BTC:'#F7931A',ETH:'#627EEA',BNB:'#F3BA2F',SOL:'#9945FF',XRP:'#00AAE4',ADA:'#0033AD' };
-
+  const colorMap = { BTC:'#F7931A', ETH:'#627EEA', BNB:'#F3BA2F' };
   list.innerHTML = ALL_CRYPTOS.map(c => {
-    const s = ALL_STATES[c.sym];
-    const price = PRICES[c.sym] || 0;
+    const s = ALL_STATES[c.sym]; const price = PRICES[c.sym] || 0;
     const total = s ? s.cash + s.btcQty * price : 100;
     const starting = s ? (s.startingCapital || s.config?.capital || 100) : 100;
     const pnl = total - starting;
-    const pct2 = starting > 0 ? ((pnl / starting) * 100).toFixed(2) : '0.00';
     const fase = s ? (s.fase === 'EN_POSICION' ? '📈 En posición' : '🔍 Buscando') : '--';
     const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
     const borderColor = pnl > 0 ? 'rgba(0,255,136,0.2)' : pnl < 0 ? 'rgba(255,56,96,0.2)' : 'var(--border)';
     const cc = colorMap[c.short] || 'var(--muted)';
-    const lastSignal = s && s.signalHistory && s.signalHistory[0];
-    const signalDot = lastSignal ? (lastSignal.accion === 'COMPRAR' ? '🟢' : lastSignal.accion === 'VENDER' ? '🔴' : '🟡') : '⚪';
-
-    // Short P&L
     const shortVal2 = (s && s.shortQty > 0) ? s.shortQty * ((s.shortEntryPrice||0) - price) : 0;
     const shortCash = s ? (s.cashShort || 0) : 100;
     const shortStart2 = s ? (s.startingCapitalShort || s.config?.capital || 100) : 100;
@@ -776,10 +611,8 @@ function renderBotDashboard() {
     const shortPnl = shortTotal - shortStart2;
     const shortPnlColor = shortPnl > 0 ? 'var(--green)' : shortPnl < 0 ? 'var(--red)' : 'var(--muted)';
     const faseShort = s ? (s.faseShort === 'EN_SHORT' ? '📉 En short' : '🔍 Buscando') : '--';
-    const totalAll = total + shortTotal;
-    const pnlAll = pnl + shortPnl;
+    const totalAll = total + shortTotal; const pnlAll = pnl + shortPnl;
     const pnlAllColor = pnlAll > 0 ? 'var(--green)' : pnlAll < 0 ? 'var(--red)' : 'var(--muted)';
-
     return `<div style="background:var(--bg2);border:1px solid ${borderColor};border-radius:12px;padding:12px 14px">
       <div style="display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px">
         <div style="width:36px;height:36px;border-radius:9px;background:${cc}22;color:${cc};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700">${c.short}</div>
@@ -808,37 +641,24 @@ function renderBotDashboard() {
   }).join('');
 }
 
-// ── Render Trades ────────────────────────────────────────────
 function renderTrades() {
-  // Recopilar TODOS los trades de TODAS las criptos
   let allTrades = [];
   ALL_CRYPTOS.forEach(c => {
-    const s = ALL_STATES[c.sym];
-    if (!s || !s.trades) return;
+    const s = ALL_STATES[c.sym]; if (!s || !s.trades) return;
     s.trades.forEach(t => allTrades.push({ ...t, _sym: c.sym, _short: c.short, _state: s }));
   });
-
-  // Ordenar por fecha de compra más reciente primero
   allTrades.sort((a, b) => new Date(b.buyTime) - new Date(a.buyTime));
-
   const closed = allTrades.filter(t => t.status !== 'ABIERTA' && t.status !== 'ABIERTA_SHORT');
-  const open = allTrades.filter(t => t.status === 'ABIERTA' || t.status === 'ABIERTA_SHORT');
   const wins = closed.filter(t => t.pnl > 0).length;
   const totalPnl = closed.reduce((acc, t) => acc + (t.pnl || 0), 0);
   const winRate = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
-
-  document.getElementById('trades-title').textContent = 'Historial — Todas las criptos';
-
+  document.getElementById('trades-title').textContent = 'Historial — BTC · ETH · BNB';
   const pnlEl = document.getElementById('st-pnl');
   pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
   pnlEl.style.color = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--muted)';
-
-  // Capital total (long + short)
   let totalCap = 0;
   ALL_CRYPTOS.forEach(c => {
-    const s = ALL_STATES[c.sym];
-    const price = PRICES[c.sym] || 0;
-    if (!s) return;
+    const s = ALL_STATES[c.sym]; const price = PRICES[c.sym] || 0; if (!s) return;
     totalCap += s.cash + s.btcQty * price;
     const shortPnl = s.shortQty > 0 ? s.shortQty * ((s.shortEntryPrice||0) - price) : 0;
     totalCap += (s.cashShort || 0) + (s.shortQty > 0 ? s.shortQty * (s.shortEntryPrice||0) + shortPnl : 0);
@@ -846,40 +666,26 @@ function renderTrades() {
   document.getElementById('st-capital').textContent = '$' + totalCap.toFixed(2);
   document.getElementById('st-ops').textContent = closed.length;
   document.getElementById('st-win').textContent = winRate;
-
   const list = document.getElementById('trades-list');
-  if (!allTrades.length) {
-    list.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div>';
-    return;
-  }
-
-  const color = { BTC:'#F7931A',ETH:'#627EEA',BNB:'#F3BA2F',SOL:'#9945FF',XRP:'#00AAE4',ADA:'#0033AD' };
-
+  if (!allTrades.length) { list.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones todavía.</div>'; return; }
+  const color = { BTC:'#F7931A', ETH:'#627EEA', BNB:'#F3BA2F' };
   list.innerHTML = allTrades.map(t => {
-    const isOpen = t.status === 'ABIERTA';
-    const isWin = t.pnl > 0;
+    const isOpen = t.status === 'ABIERTA'; const isWin = t.pnl > 0;
     const curPrice = PRICES[t._sym] || 0;
     const unrealizedPnl = isOpen && curPrice && t.buyPrice ? t._state.btcQty * (curPrice - t.buyPrice) : null;
     const c = color[t._short] || 'var(--muted)';
-
-    const isShort = t.type === 'SHORT';
-    const isOpenShort = t.status === 'ABIERTA_SHORT';
+    const isShort = t.type === 'SHORT'; const isOpenShort = t.status === 'ABIERTA_SHORT';
     const isAnyOpen = isOpen || isOpenShort;
     const shortUnrealized = isOpenShort && curPrice && t.buyPrice ? t._state.shortQty * (t.buyPrice - curPrice) : null;
     const displayUnrealized = isOpen ? unrealizedPnl : shortUnrealized;
-
     const entradaAmt = t.capital ? '$' + parseFloat(t.capital).toFixed(2) : '--';
-    const salidaAmt = isAnyOpen
-      ? (displayUnrealized !== null ? (displayUnrealized >= 0 ? '+' : '') + '$' + displayUnrealized.toFixed(2) : '...')
-      : (t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) : '--');
-
+    const salidaAmt = isAnyOpen ? (displayUnrealized !== null ? (displayUnrealized >= 0 ? '+' : '') + '$' + displayUnrealized.toFixed(2) : '...') : (t.pnl !== null ? (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(2) : '--');
     const bgColor = isAnyOpen ? 'rgba(255,209,102,0.05)' : isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
     const borderColor = isAnyOpen ? 'rgba(255,209,102,0.3)' : isWin ? 'rgba(0,255,136,0.3)' : 'rgba(255,56,96,0.3)';
     const salidaColor = isAnyOpen ? 'var(--yellow)' : isWin ? 'var(--green)' : 'var(--red)';
     const typeBadge = isShort
       ? `<span style="font-family:var(--mono);font-size:9px;background:rgba(255,56,96,0.2);color:var(--red);border-radius:4px;padding:1px 5px">SHORT</span>`
       : `<span style="font-family:var(--mono);font-size:9px;background:rgba(0,255,136,0.2);color:var(--green);border-radius:4px;padding:1px 5px">LONG</span>`;
-
     return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px">
       <div style="width:34px;height:34px;border-radius:8px;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700">${t._short}</div>
       <div>
@@ -900,30 +706,6 @@ function renderTrades() {
   }).join('');
 }
 
-// ── Render Señales ────────────────────────────────────────────
-function renderSignals() {
-  const s = ALL_STATES[CURRENT_SYM];
-  const signals = s ? s.signalHistory || [] : [];
-  const c = ALL_CRYPTOS.find(x => x.sym === CURRENT_SYM) || { short: symToShort(CURRENT_SYM) };
-  document.getElementById('signals-title').textContent = 'Señales — ' + c.short;
-
-  const el = document.getElementById('hl');
-  if (!signals.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:12px;padding:20px;text-align:center">Sin señales.</div>';
-    return;
-  }
-  el.innerHTML = signals.slice(0, 30).map(h =>
-    `<div class="hi">
-      <div class="ha ${h.accion}">${h.accion}</div>
-      <div class="hinfo">
-        <div class="hp">$${typeof h.price === 'number' ? h.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : h.price}</div>
-        <div class="htm">${h.time ? new Date(h.time).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '--'} · ${h.confianza}/10 · ${h.razon ? h.razon.substring(0, 55) + (h.razon.length > 55 ? '...' : '') : ''}</div>
-      </div>
-    </div>`
-  ).join('');
-}
-
-// ── Signal UI ────────────────────────────────────────────────
 function updateSignalUI(sig) {
   const em = { COMPRAR: '🟢', VENDER: '🔴', ESPERAR: '🟡' };
   const cl = { COMPRAR: 'var(--green)', VENDER: 'var(--red)', ESPERAR: 'var(--yellow)' };
@@ -941,45 +723,9 @@ function updateSignalUI(sig) {
   document.getElementById('cnum').style.color = cl[sig.accion];
 }
 
-// ── Precio ────────────────────────────────────────────────────
-async function fetchPrice(sym) {
-  sym = sym || CURRENT_SYM;
-  // Precio viene del KV via syncAll — solo actualizar display con lo que ya tenemos
-  const price = PRICES[sym];
-  if (!price) return;
-  try {
-    const pct = 0; // El cron no guarda % 24h, solo precio
+async function fetchPrice(sym) {}
+async function fetchAllPrices() {}
 
-    if (sym === CURRENT_SYM) {
-      document.getElementById('pval').textContent = '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-      const pe = document.getElementById('pch');
-      document.getElementById('ppct').textContent = Math.abs(pct).toFixed(2) + '%';
-      pe.className = 'pch ' + (pct >= 0 ? 'up' : 'down');
-      pe.querySelector('span').textContent = pct >= 0 ? '▲' : '▼';
-
-      const cl = kl.map(k => parseFloat(k[4]));
-      const rsi = cRSI(cl);
-      const re = document.getElementById('rsi');
-      re.textContent = rsi.toFixed(1);
-      re.style.color = rsi > 70 ? 'var(--red)' : rsi < 30 ? 'var(--green)' : 'var(--yellow)';
-      const ema = cEMA(cl, 20);
-      document.getElementById('ema').textContent = '$' + ema.toLocaleString('en-US', { maximumFractionDigits: 2 });
-      const up = price > ema;
-      document.getElementById('trnd').textContent = up ? '↑ ALCISTA' : '↓ BAJISTA';
-      document.getElementById('trnd').style.color = up ? 'var(--green)' : 'var(--red)';
-      drawSpark(cl.slice(-30));
-      updateCurrentView();
-    }
-
-    updateSelectorHeader();
-  } catch (e) {}
-}
-
-async function fetchAllPrices() {
-  await Promise.allSettled(ALL_CRYPTOS.map(c => fetchPrice(c.sym)));
-}
-
-// ── Config ────────────────────────────────────────────────────
 async function saveConfig() {
   const config = {
     capital: parseFloat(document.getElementById('cc').value) || 100,
@@ -992,47 +738,26 @@ async function saveConfig() {
   try {
     await fetch(`${PROXY}/config`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) });
     setSyncStatus('ok');
-    alert('✅ Configuración guardada para las 16 criptos');
+    alert('✅ Configuración guardada para las 3 criptos');
     sp('dashboard');
   } catch (e) { setSyncStatus('err'); alert('❌ Error al guardar'); }
-}
-
-async function resetCurrent() {
-  const c = ALL_CRYPTOS.find(x => x.sym === CURRENT_SYM) || { short: symToShort(CURRENT_SYM) };
-  if (!confirm(`¿Resetear ${c.short} a $100?`)) return;
-  try {
-    const r = await fetch(`${PROXY}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sym: CURRENT_SYM }) });
-    const d = await r.json();
-    if (d.ok) { ALL_STATES[CURRENT_SYM] = d.state; updateCurrentView(); renderDropdown(); }
-  } catch (e) {}
 }
 
 async function startFresh(capital) {
   if (!confirm(`¿Empezar ejercicio nuevo con $${capital.toLocaleString()} por cripto? Esto borrará todo el historial.`)) return;
   try {
-    await fetch(`${PROXY}/reset-all`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ capital })
-    });
-    // Update config capital too
-    await fetch(`${PROXY}/config`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ capital })
-    });
+    await fetch(`${PROXY}/reset-all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ capital }) });
+    await fetch(`${PROXY}/config`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ capital }) });
     Object.keys(ALL_STATES).forEach(k => delete ALL_STATES[k]);
     sessionStorage.clear();
     await syncAll();
     sp('global');
-    alert(`✅ Ejercicio iniciado\n$${(capital*6).toLocaleString()} en total · $${capital} por cripto\nEl bot empezará a operar en los próximos 2 minutos.`);
-  } catch(e) {
-    alert('Error: ' + e.message);
-  }
+    alert(`✅ Ejercicio iniciado\n$${(capital*3).toLocaleString()} en total · $${capital} por cripto\nEl bot empezará a operar en los próximos 2 minutos.`);
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function resetAll() {
-  if (!confirm('¿Resetear TODAS las criptos a $100? Se borra todo el historial.')) return;
+  if (!confirm('¿Resetear TODAS las criptos? Se borra todo el historial.')) return;
   setSyncStatus('syncing');
   try {
     await fetch(`${PROXY}/reset-all`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
@@ -1044,80 +769,48 @@ async function resetAll() {
 async function testTelegram() {
   const btn = event.target; btn.textContent = 'Enviando...'; btn.disabled = true;
   try {
-    const r = await fetch(`${PROXY}/telegram`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'COMPRAR', razon: '✅ TradeBot AI v3 — 16 criptos activo.', confianza: 8, precio: '70,000', simbolo: 'BTC/USDT' }) });
+    const r = await fetch(`${PROXY}/telegram`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo: 'Test', razon: '✅ TradeBot AI — BTC · ETH · BNB activo.' }) });
     const d = await r.json(); btn.textContent = d.ok ? '✅ Enviado' : '❌ Error';
   } catch (e) { btn.textContent = '❌ Error'; }
   setTimeout(() => { btn.textContent = '🧪 Enviar prueba'; btn.disabled = false; }, 3000);
 }
 
 function exportCSV() {
-  const s = ALL_STATES[CURRENT_SYM];
-  const trades = s ? s.trades || [] : [];
-  const rows = [['#', 'Símbolo', 'Precio Entrada', 'Precio Salida', 'Cantidad', 'Capital', 'P&L $', 'P&L %', 'Estado', 'Fecha Entrada', 'Fecha Salida', 'Razón Entrada', 'Razón Salida']];
-  trades.forEach(t => rows.push([t.num || '', t.symbol || '', t.buyPrice || '', t.sellPrice || '', t.qty ? t.qty.toFixed(6) : '', t.capital ? t.capital.toFixed(2) : '', t.pnl ? t.pnl.toFixed(2) : '', t.pnlPct || '', t.status || '', t.buyTime || '', t.sellTime || '', (t.buyReason || '').replace(/,/g, ';'), (t.sellReason || '').replace(/,/g, ';')]));
+  let allTrades = [];
+  ALL_CRYPTOS.forEach(c => {
+    const s = ALL_STATES[c.sym]; if (!s || !s.trades) return;
+    s.trades.forEach(t => allTrades.push({ ...t, _short: c.short }));
+  });
+  const rows = [['#','Símbolo','Tipo','Precio Entrada','Precio Salida','Cantidad','Capital','P&L $','P&L %','Estado','Fecha Entrada','Fecha Salida','Razón Entrada','Razón Salida']];
+  allTrades.forEach(t => rows.push([t.num||'',t.symbol||'',t.type||'LONG',t.buyPrice||'',t.sellPrice||'',t.qty?t.qty.toFixed(6):'',t.capital?t.capital.toFixed(2):'',t.pnl?t.pnl.toFixed(2):'',t.pnlPct||'',t.status||'',t.buyTime||'',t.sellTime||'',(t.buyReason||'').replace(/,/g,';'),(t.sellReason||'').replace(/,/g,';')]));
   const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `tradebot_${symToShort(CURRENT_SYM)}_trades.csv`; a.click();
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'tradebot_trades.csv'; a.click();
 }
 
 function setSyncStatus(status) {
-  ['sync-dot', 'sync-dot-cfg'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.className = 'sync-dot ' + status;
-  });
+  ['sync-dot','sync-dot-cfg'].forEach(id => { const el = document.getElementById(id); if (el) el.className = 'sync-dot ' + status; });
   const txt = document.getElementById('sync-txt');
   if (txt) txt.textContent = status === 'ok' ? 'Conectado · datos en tiempo real' : status === 'syncing' ? 'Sincronizando...' : '⚠️ Sin conexión';
 }
 
-function fmtDate(iso) {
-  try { return new Date(iso).toLocaleString('es', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
-  catch (e) { return iso; }
-}
-function cRSI(c, p = 14) { let g = 0, l = 0; for (let i = c.length - p; i < c.length; i++) { const d = c[i] - c[i - 1]; d > 0 ? g += d : l -= d; } return 100 - (100 / (1 + g / (l || 1))); }
+function fmtDate(iso) { try { return new Date(iso).toLocaleString('es', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } }
+function cRSI(c, p = 14) { let g = 0, l = 0; for (let i = c.length - p; i < c.length; i++) { const d = c[i] - c[i-1]; d > 0 ? g += d : l -= d; } return 100 - (100 / (1 + g / (l || 1))); }
 function cEMA(c, p) { const k = 2 / (p + 1); let e = c[0]; for (const x of c) e = x * k + e * (1 - k); return e; }
-function drawSpark(prices) {
-  const cv = document.getElementById('sp'), ctx = cv.getContext('2d');
-  const W = cv.offsetWidth * devicePixelRatio, H = 55 * devicePixelRatio;
-  cv.width = W; cv.height = H;
-  const mn = Math.min(...prices), mx = Math.max(...prices), rng = mx - mn || 1;
-  const pts = prices.map((p, i) => ({ x: i / (prices.length - 1) * W, y: H - ((p - mn) / rng) * H * .88 - H * .06 }));
-  const color = cryptoColor(symToShort(CURRENT_SYM));
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, color + '44'); g.addColorStop(1, color + '00');
-  ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-  ctx.strokeStyle = color; ctx.lineWidth = 2 * devicePixelRatio; ctx.stroke();
-  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
-}
 
-
-// ── Compra / Venta forzada ────────────────────────────────────
 async function forceBuyAll() {
-  if (!confirm('¿Comprar las 6 criptos al precio actual? ($100 cada una)')) return;
+  if (!confirm('¿Comprar BTC, ETH y BNB al precio actual? ($100 cada una)')) return;
   const btn = document.getElementById('force-buy-btn');
   const res = document.getElementById('force-result');
-  btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
-  res.style.display = 'none';
+  btn.textContent = '⏳ Comprando...'; btn.disabled = true; res.style.display = 'none';
   try {
-    // Precios ya están en KV (guardados por el cron cada 2 min)
-    btn.textContent = '⏳ Comprando...';
     const r = await fetch(PROXY + '/force-buy-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
-      const lines = d.results.map(r =>
-        r.ok
-          ? `✅ ${r.short} — $${parseFloat(r.price).toLocaleString('en-US', { maximumFractionDigits: 2 })} · ${parseFloat(r.qty).toFixed(5)} unidades`
-          : `⚠️ ${r.sym ? r.sym.replace('USDT','') : '?'} — ${r.reason}`
-      ).join('<br>');
-      res.innerHTML = '<b>Resultado compras:</b><br>' + lines;
+      res.innerHTML = '<b>Resultado compras:</b><br>' + d.results.map(r => r.ok ? `✅ ${r.short} — $${parseFloat(r.price).toLocaleString('en-US',{maximumFractionDigits:2})}` : `⚠️ ${r.short} — ${r.reason}`).join('<br>');
       res.style.display = 'block';
-      // Sync completo — esperar que KV esté actualizado
       await new Promise(r => setTimeout(r, 800));
-      await syncAll();
-      renderGlobal();
-      renderTrades();
-      // Mostrar trades automáticamente
-      sp('trades');
+      await syncAll(); renderGlobal(); renderTrades(); sp('trades');
     }
   } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
   btn.textContent = '🟢 Comprar Todo'; btn.disabled = false;
@@ -1127,57 +820,33 @@ async function forceSellAll() {
   if (!confirm('¿Vender todas las posiciones abiertas ahora?')) return;
   const btn = document.getElementById('force-sell-btn');
   const res = document.getElementById('force-result');
-  btn.textContent = '⏳ Obteniendo precios...'; btn.disabled = true;
-  res.style.display = 'none';
+  btn.textContent = '⏳ Vendiendo...'; btn.disabled = true; res.style.display = 'none';
   try {
-    // Precios ya están en KV (guardados por el cron cada 2 min)
-    btn.textContent = '⏳ Vendiendo...';
     const r = await fetch(PROXY + '/force-sell-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const d = await r.json();
     if (d.ok) {
-      const lines = d.results.map(r =>
-        r.ok
-          ? `${parseFloat(r.pnl) >= 0 ? '💰' : '💸'} ${r.short} — ${parseFloat(r.pnl) >= 0 ? '+' : ''}$${parseFloat(r.pnl).toFixed(2)} (${r.pnlPct}%)`
-          : `⚠️ ${r.sym ? r.sym.replace('USDT','') : '?'} — ${r.reason}`
-      ).join('<br>');
-      res.innerHTML = '<b>Resultado ventas:</b><br>' + lines;
+      res.innerHTML = '<b>Resultado ventas:</b><br>' + d.results.map(r => r.ok ? `${parseFloat(r.pnl)>=0?'💰':'💸'} ${r.short} — ${parseFloat(r.pnl)>=0?'+':''}$${parseFloat(r.pnl).toFixed(2)}` : `⚠️ ${r.short} — ${r.reason}`).join('<br>');
       res.style.display = 'block';
-      await syncAll();
-      renderGlobal();
-      renderTrades();
+      await syncAll(); renderGlobal(); renderTrades();
     }
   } catch(e) { res.innerHTML = '❌ Error: ' + e.message; res.style.display = 'block'; }
   btn.textContent = '🔴 Vender Todo'; btn.disabled = false;
 }
 
-// ── Init ──────────────────────────────────────────────────────
 async function init() {
-  // 1. Mostrar cache local inmediatamente (UX rápido)
   const cachedCryptos = loadCryptoList();
   if (cachedCryptos.length > 0) {
     ALL_CRYPTOS = cachedCryptos;
-    cachedCryptos.forEach(c => {
-      const cached = loadCache(c.sym);
-      if (cached) ALL_STATES[c.sym] = cached;
-    });
-    updateCurrentView();
-    updateSelectorHeader();
-    renderDropdown();
-    renderTrades();
+    cachedCryptos.forEach(c => { const cached = loadCache(c.sym); if (cached) ALL_STATES[c.sym] = cached; });
+    updateCurrentView(); updateSelectorHeader(); renderDropdown(); renderTrades();
   }
-
-  // 2. SIEMPRE sincronizar desde KV al cargar — funciona en cualquier dispositivo
   await syncAll();
-  fetchPrice(CURRENT_SYM);
-  fetchAllPrices();
 }
 init();
 
-// Sync KV cada 30s, precios cada 15s, precios de todas cada 2 min
 setInterval(syncAll, 30000);
-setInterval(syncMomentum, 30000); // sync momentum every 30s too
+setInterval(syncMomentum, 30000);
 
-// ── Momentum Functions ────────────────────────────────────────
 async function syncMomentum() {
   try {
     const r = await fetch(PROXY + '/momentum-status', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
@@ -1188,95 +857,56 @@ async function syncMomentum() {
 
 function renderMomentum(d) {
   const closed = (d.trades || []).filter(t => t.status !== 'ABIERTA');
-  const wins   = closed.filter(t => t.pnl > 0).length;
-  const totalPnl = closed.reduce((a, t) => a + (t.pnl || 0), 0);
-  const wr = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
-
-  // Current value = cash + open positions value
-  const openPnl = (d.positions || []).reduce((a, p) => a + (p.pnl || 0), 0);
+  const wins = closed.filter(t => t.pnl > 0).length;
   const totalCap = (d.cash || 0) + (d.positions || []).reduce((a, p) => a + p.capital + (p.pnl || 0), 0);
   const pnlAll = totalCap - (d.startingCapital || 100);
   const pnlColor = pnlAll > 0 ? 'var(--green)' : pnlAll < 0 ? 'var(--red)' : 'var(--muted)';
-
-  const capEl = document.getElementById('m-capital');
-  if (capEl) capEl.textContent = '$' + totalCap.toFixed(2);
-  const pnlEl = document.getElementById('m-pnl');
-  if (pnlEl) { pnlEl.textContent = (pnlAll >= 0 ? '+' : '') + '$' + pnlAll.toFixed(2); pnlEl.style.color = pnlColor; }
-  const openEl = document.getElementById('m-open');
-  if (openEl) openEl.textContent = (d.positions || []).length + '/2';
-  const wrEl = document.getElementById('m-wr');
-  if (wrEl) wrEl.textContent = wr;
-  const scanEl = document.getElementById('m-last-scan');
-  if (scanEl) scanEl.textContent = d.lastScan ? fmtDate(d.lastScan) : '--';
-
-  // Render open positions
+  const wr = closed.length > 0 ? ((wins / closed.length) * 100).toFixed(0) + '%' : '--%';
+  const capEl = document.getElementById('m-capital'); if (capEl) capEl.textContent = '$' + totalCap.toFixed(2);
+  const pnlEl = document.getElementById('m-pnl'); if (pnlEl) { pnlEl.textContent = (pnlAll >= 0 ? '+' : '') + '$' + pnlAll.toFixed(2); pnlEl.style.color = pnlColor; }
+  const openEl = document.getElementById('m-open'); if (openEl) openEl.textContent = (d.positions || []).length + '/2';
+  const wrEl = document.getElementById('m-wr'); if (wrEl) wrEl.textContent = wr;
+  const scanEl = document.getElementById('m-last-scan'); if (scanEl) scanEl.textContent = d.lastScan ? fmtDate(d.lastScan) : '--';
   const posEl = document.getElementById('m-positions');
   if (posEl) {
     if (!d.positions || !d.positions.length) {
       posEl.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin posiciones abiertas — el bot está escaneando el mercado.</div>';
     } else {
       posEl.innerHTML = d.positions.map(p => {
-        const pnlPct = p.pnlPct || 0;
-        const pnl = p.pnl || 0;
-        const pc = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
+        const pnl = p.pnl || 0; const pc = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--muted)';
         const trailPct = p.maxPrice ? ((p.maxPrice - (p.currentPrice || p.entryPrice)) / p.maxPrice * 100).toFixed(1) : '0';
         return `<div style="background:rgba(76,201,240,0.06);border:1px solid rgba(76,201,240,0.2);border-radius:12px;padding:14px">
           <div style="display:flex;justify-content:space-between;align-items:start">
-            <div>
-              <div style="font-family:var(--mono);font-weight:700;font-size:13px">${p.sym.replace('USDT','/USDT')}</div>
-              <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">24h: +${p.change24h?.toFixed(1)}% · ${fmtDate(p.entryTime)}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${pc}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
-              <div style="font-family:var(--mono);font-size:10px;color:${pc}">${pnlPct >= 0 ? '+' : ''}${pnlPct}%</div>
-            </div>
+            <div><div style="font-family:var(--mono);font-weight:700;font-size:13px">${p.sym.replace('USDT','/USDT')}</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">24h: +${p.change24h?.toFixed(1)}% · ${fmtDate(p.entryTime)}</div></div>
+            <div style="text-align:right"><div style="font-family:var(--mono);font-size:15px;font-weight:700;color:${pc}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:${pc}">${p.pnlPct >= 0 ? '+' : ''}${p.pnlPct}%</div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
-            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Entrada</div>
-              <div style="font-family:var(--mono);font-size:10px;font-weight:700">$${parseFloat(p.entryPrice).toFixed(4)}</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Actual</div>
-              <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${pc}">$${p.currentPrice ? parseFloat(p.currentPrice).toFixed(4) : '--'}</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px">
-              <div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Máximo</div>
-              <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green)">$${p.maxPrice ? parseFloat(p.maxPrice).toFixed(4) : '--'}</div>
-            </div>
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px"><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Entrada</div><div style="font-family:var(--mono);font-size:10px;font-weight:700">$${parseFloat(p.entryPrice).toFixed(4)}</div></div>
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px"><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Actual</div><div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${pc}">$${p.currentPrice ? parseFloat(p.currentPrice).toFixed(4) : '--'}</div></div>
+            <div style="background:var(--bg3);border-radius:7px;padding:6px 8px"><div style="font-family:var(--mono);font-size:9px;color:var(--muted)">Máximo</div><div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green)">$${p.maxPrice ? parseFloat(p.maxPrice).toFixed(4) : '--'}</div></div>
           </div>
-          <div style="margin-top:8px;background:var(--bg3);border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:9px;color:var(--muted)">
-            Trailing: cayó ${trailPct}% del máx · Stop Loss -10% · TP +30%
-          </div>
+          <div style="margin-top:8px;background:var(--bg3);border-radius:7px;padding:6px 10px;font-family:var(--mono);font-size:9px;color:var(--muted)">Trailing: cayó ${trailPct}% del máx · SL -10% · TP +30%</div>
         </div>`;
       }).join('');
     }
   }
-
-  // Render trade history
   const trEl = document.getElementById('m-trades');
   if (trEl) {
-    const closedTrades = (d.trades || []).filter(t => t.status !== 'ABIERTA');
-    if (!closedTrades.length) {
+    if (!closed.length) {
       trEl.innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;padding:16px;text-align:center;background:var(--bg2);border-radius:12px;border:1px solid var(--border)">Sin operaciones cerradas todavía.</div>';
     } else {
-      trEl.innerHTML = closedTrades.map(t => {
-        const isWin = t.pnl > 0;
-        const pc = isWin ? 'var(--green)' : 'var(--red)';
+      trEl.innerHTML = closed.map(t => {
+        const isWin = t.pnl > 0; const pc = isWin ? 'var(--green)' : 'var(--red)';
         const bg = isWin ? 'rgba(0,255,136,0.05)' : 'rgba(255,56,96,0.05)';
         const border = isWin ? 'rgba(0,255,136,0.2)' : 'rgba(255,56,96,0.2)';
         return `<div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center">
-          <div>
-            <div style="font-family:var(--mono);font-size:12px;font-weight:700">${t.sym?.replace('USDT','/USDT')}</div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">
-              $${parseFloat(t.entryPrice).toFixed(4)} → $${t.sellPrice ? parseFloat(t.sellPrice).toFixed(4) : '--'}
-            </div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${t.sellReason || '--'}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${pc}">${t.pnl >= 0 ? '+' : ''}$${parseFloat(t.pnl).toFixed(2)}</div>
-            <div style="font-family:var(--mono);font-size:10px;color:${pc}">${t.pnlPct >= 0 ? '+' : ''}${t.pnlPct}%</div>
-          </div>
+          <div><div style="font-family:var(--mono);font-size:12px;font-weight:700">${t.sym?.replace('USDT','/USDT')}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px">$${parseFloat(t.entryPrice).toFixed(4)} → $${t.sellPrice ? parseFloat(t.sellPrice).toFixed(4) : '--'}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:1px">${t.sellReason || '--'}</div></div>
+          <div style="text-align:right"><div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${pc}">${t.pnl >= 0 ? '+' : ''}$${parseFloat(t.pnl).toFixed(2)}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:${pc}">${t.pnlPct >= 0 ? '+' : ''}${t.pnlPct}%</div></div>
         </div>`;
       }).join('');
     }
@@ -1284,10 +914,10 @@ function renderMomentum(d) {
 }
 
 async function resetMomentum() {
-  if (!confirm('¿Resetear módulo momentum? Se borrarán todas las posiciones y trades.')) return;
+  if (!confirm('¿Resetear módulo momentum?')) return;
   await fetch(PROXY + '/momentum-reset', { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
   await syncMomentum();
-}  // sync KV cada 30s — esto actualiza precios también
+}
 </script>
 </body>
 </html>
