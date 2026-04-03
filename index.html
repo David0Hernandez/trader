@@ -418,6 +418,7 @@ async function syncAll() {
     renderDashboard();
     renderTrades();
     drawSparkline();
+    updateManualPanel();
     document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit'});
   } catch (e) {
     document.getElementById('last-update').textContent = 'Error de conexión';
@@ -719,6 +720,67 @@ async function resetAll() {
     alert('✅ Portfolio reiniciado');
     syncAll();
   } catch (e) { alert('Error: ' + e.message); }
+}
+
+// ── Trading Manual ────────────────────────────────────────────
+let MANUAL_SYM = 'BTCUSDT';
+
+function selectManualSym(sym, tab) {
+  MANUAL_SYM = sym;
+  tab.parentElement.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  updateManualPanel();
+}
+
+function updateManualPanel() {
+  const s = ALL_STATES[MANUAL_SYM];
+  const price = s?.price;
+  el('manual-price').textContent = price
+    ? '$' + price.toLocaleString('en-US', { maximumFractionDigits: 4 })
+    : '—';
+  if (!s) return;
+  if (s.fase === 'EN_POSICION') {
+    el('manual-long-status').textContent = `LONG abierto — entrada $${parseFloat(s.entryPrice).toLocaleString('en-US', { maximumFractionDigits: 4 })}`;
+    el('manual-long-status').style.color = 'var(--green)';
+  } else {
+    el('manual-long-status').textContent = 'LONG: sin posición';
+    el('manual-long-status').style.color = 'var(--muted)';
+  }
+  if (s.faseShort === 'EN_SHORT') {
+    el('manual-short-status').textContent = `SHORT abierto — entrada $${parseFloat(s.shortEntryPrice).toLocaleString('en-US', { maximumFractionDigits: 4 })}`;
+    el('manual-short-status').style.color = 'var(--red)';
+  } else {
+    el('manual-short-status').textContent = 'SHORT: sin posición';
+    el('manual-short-status').style.color = 'var(--muted)';
+  }
+}
+
+async function manualTrade(action) {
+  const pct = parseInt(el('manual-pct').value);
+  const msgEl = el('manual-msg');
+  msgEl.textContent = '⏳ Enviando orden...';
+  msgEl.style.color = 'var(--amber)';
+  try {
+    const r = await fetch(WORKER + '/manual-trade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sym: MANUAL_SYM, action, capitalPct: pct })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msgEl.textContent = '✅ ' + d.msg;
+      msgEl.style.color = 'var(--green)';
+      await syncAll();
+      updateManualPanel();
+    } else {
+      msgEl.textContent = '❌ ' + (d.error || 'Error desconocido');
+      msgEl.style.color = 'var(--red)';
+    }
+  } catch (e) {
+    msgEl.textContent = '❌ Error de conexión';
+    msgEl.style.color = 'var(--red)';
+  }
+  setTimeout(() => { msgEl.textContent = ''; }, 5000);
 }
 
 // ── Helpers ───────────────────────────────────────────────────
