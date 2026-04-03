@@ -167,9 +167,49 @@ toggle-wrap { display: flex; align-items: center; gap: 10px; }
     <div class="card-title">Estado por par</div>
     <div id="crypto-summary"></div>
   </div>
-</div>
 
-<!-- ═══ TRADES ═══ -->
+  <!-- Panel de trading manual -->
+  <div class="card" id="manual-panel">
+    <div class="card-title">Trading manual</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Par</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div class="ctab active" onclick="selectManualSym('BTCUSDT',this)">BTC</div>
+        <div class="ctab" onclick="selectManualSym('ETHUSDT',this)">ETH</div>
+        <div class="ctab" onclick="selectManualSym('BNBUSDT',this)">BNB</div>
+        <div class="ctab" onclick="selectManualSym('SOLUSDT',this)">SOL</div>
+        <div class="ctab" onclick="selectManualSym('XRPUSDT',this)">XRP</div>
+        <div class="ctab" onclick="selectManualSym('ADAUSDT',this)">ADA</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;background:var(--bg3);border-radius:10px;padding:10px 14px">
+      <div>
+        <div style="font-size:11px;color:var(--muted)">Precio actual</div>
+        <div style="font-size:18px;font-weight:600" id="manual-price">—</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted)" id="manual-long-status">LONG: sin posición</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="manual-short-status">SHORT: sin posición</div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:12px;color:var(--muted)">Capital a usar</div>
+        <div style="font-size:13px;font-weight:600" id="manual-pct-label">50%</div>
+      </div>
+      <input type="range" min="10" max="100" step="10" value="50" id="manual-pct" oninput="el('manual-pct-label').textContent=this.value+'%'" style="width:100%;accent-color:var(--blue)">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <button class="btn" style="background:rgba(48,209,88,.15);color:var(--green);border:0.5px solid rgba(48,209,88,.3);font-size:13px;padding:12px" onclick="manualTrade('BUY_LONG')">▲ Abrir LONG</button>
+      <button class="btn" style="background:rgba(48,209,88,.08);color:var(--green);border:0.5px solid rgba(48,209,88,.2);font-size:13px;padding:12px" onclick="manualTrade('SELL_LONG')">✓ Cerrar LONG</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn" style="background:rgba(255,69,58,.15);color:var(--red);border:0.5px solid rgba(255,69,58,.3);font-size:13px;padding:12px" onclick="manualTrade('BUY_SHORT')">▼ Abrir SHORT</button>
+      <button class="btn" style="background:rgba(255,69,58,.08);color:var(--red);border:0.5px solid rgba(255,69,58,.2);font-size:13px;padding:12px" onclick="manualTrade('SELL_SHORT')">✓ Cerrar SHORT</button>
+    </div>
+    <div id="manual-msg" style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px;min-height:18px"></div>
+  </div>
+</div>
 <div class="page" id="page-trades">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div style="font-size:17px;font-weight:600">Historial de trades</div>
@@ -595,7 +635,6 @@ function renderMomentum(m) {
 
 // ── Health Check ──────────────────────────────────────────────
 async function runHealthCheck() {
-  // Reset dots a loading
   ['cloudflare','binance','binanceData','kv','anthropic','telegram'].forEach(k => {
     el('hd-'+k).className = 'health-dot loading';
     el('hi-'+k).textContent = 'Verificando...';
@@ -603,28 +642,32 @@ async function runHealthCheck() {
   });
   el('health-ts').textContent = 'Consultando...';
 
+  // Cloudflare y variables locales — respuesta instantánea
+  el('hd-cloudflare').className = 'health-dot ok';
+  el('hi-cloudflare').textContent = 'Frontend cargado correctamente';
+  el('hm-cloudflare').textContent = '0ms';
+
+  const t0 = Date.now();
   try {
-    const t0 = Date.now();
     const r = await fetch(WORKER + '/health');
     const d = await r.json();
     const totalMs = Date.now() - t0;
-
     el('health-ts').textContent = `Verificado en ${totalMs}ms — ${new Date().toLocaleTimeString('es')}`;
 
-    const checks = ['cloudflare','binance','binanceData','kv','anthropic','telegram'];
-    checks.forEach(k => {
+    ['cloudflare','binance','binanceData','kv','anthropic','telegram'].forEach(k => {
       const item = d[k];
       if (!item) return;
       el('hd-'+k).className = 'health-dot ' + (item.ok ? 'ok' : 'fail');
       el('hi-'+k).textContent = item.detail || '—';
-      el('hm-'+k).textContent = item.ms != null ? item.ms + 'ms' : '';
+      el('hm-'+k).textContent = item.ms != null && item.ms > 0 ? item.ms + 'ms' : '';
     });
   } catch (e) {
-    el('health-ts').textContent = 'Error: ' + e.message;
-    ['cloudflare','binance','binanceData','kv','anthropic','telegram'].forEach(k => {
+    const totalMs = Date.now() - t0;
+    el('health-ts').textContent = `Error tras ${totalMs}ms`;
+    ['binance','binanceData','kv','anthropic','telegram'].forEach(k => {
       el('hd-'+k).className = 'health-dot fail';
+      el('hi-'+k).textContent = k === 'binance' ? 'No se pudo contactar el Worker' : '—';
     });
-    el('hi-cloudflare').textContent = 'No se pudo conectar con el Worker';
   }
 }
 
