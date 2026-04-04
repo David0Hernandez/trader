@@ -290,8 +290,13 @@ function renderDash(){
   let cap=0,start=0,wins=0,losses=0,longs=0,shorts=0;
   states.forEach(s=>{
     const p=s.price||0;
-    cap+=(s.cash||0)+(s.qty||0)*p+(s.cashShort||0);
-    start+=(s.startingCapital||500)+(s.startingCapitalShort||500);
+    // Wallet LONG: cash disponible + valor de posición abierta
+    const longVal = (s.cash||0) + (s.fase==='EN_POSICION' ? (s.qty||0)*p : 0);
+    // Wallet SHORT: cash disponible + P&L de posición short abierta
+    const shortPnl = s.faseShort==='EN_SHORT' ? (s.shortQty||0)*((s.shortEntryPrice||0)-p) : 0;
+    const shortVal = (s.cashShort||0) + shortPnl;
+    cap   += longVal + shortVal;
+    start += (s.startingCapital||500) + (s.startingCapitalShort||500);
     const cl=(s.trades||[]).filter(t=>t.estado!=='ABIERTA');
     wins+=cl.filter(t=>t.estado==='GANANCIA').length;
     losses+=cl.filter(t=>t.estado==='PÉRDIDA').length;
@@ -313,7 +318,9 @@ function renderDash(){
   g('d-pos').textContent=longs+'L / '+shorts+'S';
   const targets=CUR==='ALL'?SYMS.map(c=>ALL[c.sym]).filter(Boolean):[ALL[CUR]].filter(Boolean);
   g('sym-rows').innerHTML=targets.map(s=>{
-    const p=s.price||0,lv=(s.cash||0)+(s.qty||0)*p,ls=s.startingCapital||500,lp=lv-ls;
+    const p=s.price||0;
+    const lv=(s.cash||0)+(s.fase==='EN_POSICION'?(s.qty||0)*p:0);
+    const ls=s.startingCapital||500,lp=lv-ls;
     const cl=(s.trades||[]).filter(t=>t.estado!=='ABIERTA');
     const lw=cl.filter(t=>t.estado==='GANANCIA').length;
     const pc2=lp>0?'var(--green)':lp<0?'var(--red)':'var(--muted)';
