@@ -210,7 +210,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,.97);backdro
   <button class="btn btn-g" onclick="doSaveConfig()">Guardar configuración</button>
   <div class="card">
     <div class="ctitle">Reiniciar ejercicio</div>
-    <div class="crow"><div><div class="clabel">Capital inicial (USD)</div><div class="csub">Por par — long + short independientes</div></div><input class="cinput" id="cfg-cap" type="number" value="500" min="50" step="50"></div>
+    <div class="crow"><div><div class="clabel">Capital inicial (USD)</div><div class="csub">Por par — long + short independientes</div></div><input class="cinput" id="cfg-cap" type="number" value="100" min="10" step="10"></div>
     <button class="btn btn-r" style="margin-top:12px" onclick="doReset()">⚠ Reiniciar portfolio</button>
   </div>
   <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;font-family:var(--mono);line-height:1.8">TradeBot AI v5.0 · paper trading only<br>solitary-forest-949f.1111davidh.workers.dev</div>
@@ -452,14 +452,81 @@ async function doSaveConfig(){
 }
 
 async function doReset(){
-  const capital=parseFloat(g('cfg-cap').value)||500;
+  const capital=parseFloat(g('cfg-cap').value)||100;
   if(!confirm('¿Reiniciar TODO el portfolio?\n$'+capital+' por par\nEsto borra todo el historial.'))return;
   try{await post('/reset',{startingCapital:capital});ALL={};alert('✅ Reiniciado con $'+capital+' por par');syncAll();}
   catch(e){alert('Error: '+e.message);}
 }
 
+// ══════════════════════════════════════════════════
+// BINANCE WEBSOCKET — precios en tiempo real
+// ══════════════════════════════════════════════════
+let ws=null, wsReconnectTimer=null, wsRetries=0;
+
+function connectWS(){
+  clearTimeout(wsReconnectTimer);
+  const streams=SYMS.map(c=>c.sym.toLowerCase()+'@miniTicker').join('/');
+  try{
+    ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+streams);
+
+    ws.onopen=()=>{
+      wsRetries=0;
+      console.log('WS Binance conectado');
+      g('sdot').style.cssText='background:var(--green);box-shadow:0 0 6px var(--green)';
+    };
+
+    ws.onmessage=(e)=>{
+      try{
+        const msg=JSON.parse(e.data);
+        const t=msg.data;
+        if(!t||!t.s)return;
+        const sym=t.s;
+        if(!ALL[sym])ALL[sym]={};
+        ALL[sym].price=parseFloat(t.c);
+        ALL[sym].priceOpen=parseFloat(t.o);
+        // Actualizar precio en UI sin esperar syncAll
+        renderDash();
+        updManual();
+        g('sync-lbl').textContent=new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      }catch(err){}
+    };
+
+    ws.onerror=()=>{
+      g('sdot').style.cssText='background:var(--yellow);box-shadow:0 0 6px var(--yellow)';
+    };
+
+    ws.onclose=()=>{
+      g('sdot').style.cssText='background:var(--red);box-shadow:0 0 6px var(--red)';
+      wsRetries++;
+      // Backoff exponencial: 2s, 4s, 8s... máx 30s
+      const delay=Math.min(30000, 2000*Math.pow(2,wsRetries-1));
+      console.log(`WS cerrado — reconectando en ${delay/1000}s`);
+      wsReconnectTimer=setTimeout(connectWS, delay);
+    };
+  }catch(err){
+    wsRetries++;
+    const delay=Math.min(30000, 2000*Math.pow(2,wsRetries-1));
+    wsReconnectTimer=setTimeout(connectWS, delay);
+  }
+}
+
+// Reconexión manual al volver a primer plano (móvil)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(!ws||ws.readyState===WebSocket.CLOSED||ws.readyState===WebSocket.CLOSING){
+      wsRetries=0;
+      connectWS();
+    }
+    // Sincronizar estado del Worker al volver
+    syncAll();
+  }
+});
+
+// Inicio
 syncAll();
-setInterval(syncAll,30000);
+connectWS();
+// Polling Worker cada 60s solo para estado/trades (no precios — los maneja WS)
+setInterval(syncAll,60000);
 </script>
 </body>
 </html>
