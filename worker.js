@@ -625,6 +625,107 @@ async function processCrypto(env, crypto, allStates, prices, regime) {
 }
 
 // ════════════════════════════════════════════════════════════
+// REPORTE SEMANAL — cada viernes automático
+// ════════════════════════════════════════════════════════════
+
+async function weeklyReport(env) {
+  const [allStates, prices] = await Promise.all([getAllStates(env), getAllPrices(env)]);
+  const now = Date.now();
+  const weekAgo = now - 7 * 24 * 3600 * 1000;
+
+  let totalPnl = 0, totalStart = 0, wins = 0, losses = 0;
+  let weekTrades = [];
+  const pairStats = [];
+
+  for (const c of CRYPTOS) {
+    const s = parseState(allStates[c.sym]);
+    const price = prices[c.sym] || 0;
+    const capL = s.cash + s.qty * price;
+    const shortPnl = s.faseShort === 'EN_SHORT' ? s.shortQty * (s.shortEntryPrice - price) : 0;
+    const capS = s.cashShort + (s.faseShort === 'EN_SHORT' ? s.shortQty * s.shortEntryPrice + shortPnl : 0);
+    const start = (s.startingCapital || 100) + (s.startingCapitalShort || 100);
+    const cap = capL + capS;
+    const pnl = cap - start;
+
+    const weekTradesPair = (s.trades || []).filter(t =>
+      t.estado !== 'ABIERTA' && t.fechaSalida && new Date(t.fechaSalida).getTime() > weekAgo
+    );
+    weekTrades = [...weekTrades, ...weekTradesPair.map(t => ({ ...t, pair: c.short }))];
+
+    const w = weekTradesPair.filter(t => t.estado === 'GANANCIA').length;
+    const l = weekTradesPair.filter(t => t.estado === 'PÉRDIDA').length;
+    wins += w; losses += l;
+    totalPnl += pnl; totalStart += start;
+    pairStats.push({ pair: c.short, pnl, wins: w, losses: l, fase: s.fase, faseShort: s.faseShort });
+  }
+
+  const regime = await getMarketRegime(env);
+  const pct = totalStart > 0 ? (totalPnl / totalStart * 100).toFixed(2) : '0.00';
+  const wr = (wins + losses) > 0 ? (wins / (wins + losses) * 100).toFixed(0) : '--';
+
+  // Claude analiza la semana
+  const analysisPrompt = `Eres analista de trading. Analiza el rendimiento semanal de este bot de paper trading crypto.
+
+RESUMEN:
+- P&L: ${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)} (${pct}%)
+- Win Rate: ${wr}% (${wins}W / ${losses}L de ${wins+losses} trades)
+- Régimen actual: ${regime.regime} | Fear&Greed: ${regime.fearGreed}
+
+POR PAR:
+${pairStats.map(p => `${p.pair}: ${p.pnl>=0?'+':''}$${p.pnl.toFixed(2)} | ${p.wins}W/${p.losses}L | ${p.fase==='EN_POSICION'?'EN LONG':p.faseShort==='EN_SHORT'?'EN SHORT':'IDLE'}`).join('\n')}
+
+TRADES SEMANA (${weekTrades.length}):
+${weekTrades.slice(0, 12).map(t => `${t.pair} ${t.tipo} ${t.estado} ${t.pnlPct}%: ${(t.razonSalida||t.razonEntrada||'').slice(0,50)}`).join('\n')}
+
+En español, dame:
+1. 3 puntos débiles observados esta semana
+2. 3 mejoras concretas para la próxima semana
+3. Una línea sobre el régimen actual y qué esperar
+
+Sé directo y específico. Máximo 600 caracteres total.`;
+
+  let analysis = 'Sin análisis disponible';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 350, messages: [{ role: 'user', content: analysisPrompt }] }),
+      signal: AbortSignal.timeout(12000)
+    });
+    const data = await r.json();
+    analysis = data.content?.[0]?.text?.trim() || 'Sin análisis';
+  } catch(e) { console.error('Weekly analysis error:', e.message); }
+
+  const msg = `🤖 <b>TradeBot AI — Reporte Semanal</b>
+━━━━━━━━━━━━━━
+💼 <b>Portfolio esta semana</b>
+P&L: ${totalPnl>=0?'+':''}$${totalPnl.toFixed(2)} (${pct}%)
+Win Rate: ${wr}% | ${wins}W / ${losses}L | ${wins+losses} trades
+Régimen: ${regime.regime} | F&G: ${regime.fearGreed}/100
+
+📊 <b>Por par</b>
+${pairStats.map(p => `${p.pnl>=0?'🟢':'🔴'} ${p.pair.replace('/USDT','')}: ${p.pnl>=0?'+':''}$${p.pnl.toFixed(2)} (${p.wins}W/${p.losses}L) ${p.fase==='EN_POSICION'?'▲':p.faseShort==='EN_SHORT'?'▼':'—'}`).join('\n')}
+
+🧠 <b>Análisis Claude</b>
+${analysis}
+━━━━━━━━━━━━━━
+🕐 ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}`;
+
+  try {
+    // Telegram máx 4096 chars por mensaje
+    const parts = [];
+    for (let i = 0; i < msg.length; i += 4000) parts.push(msg.slice(i, i + 4000));
+    for (const part of parts) {
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: part, parse_mode: 'HTML' })
+      });
+    }
+  } catch(e) { console.error('Weekly report telegram error:', e.message); }
+}
+
+// ════════════════════════════════════════════════════════════
 // MOMENTUM — cada 2 ciclos
 // ════════════════════════════════════════════════════════════
 
@@ -956,6 +1057,11 @@ export default {
       return new Response(JSON.stringify({ ok: true, pnl: pnl.toFixed(2), winRate: wr }), { headers: cors });
     }
 
+    if (url.pathname === '/weekly-report') {
+      await weeklyReport(env);
+      return new Response(JSON.stringify({ ok: true, msg: 'Reporte semanal enviado a Telegram' }), { headers: cors });
+    }
+
     if (url.pathname === '/telegram') {
       await telegram(env, body.title || 'TradeBot', body.message || 'Test');
       return new Response(JSON.stringify({ ok: true }), { headers: cors });
@@ -974,10 +1080,17 @@ export default {
     }
   },
 
-  // ── Cron: cada 15 minutos (era 10) ──────────────────────
-  // En wrangler.toml: crons = ["*/15 * * * *"]
+  // ── Cron: */15 * * * *  (trading normal)
+  // ── Cron: 0 18 * * 5    (reporte viernes 12pm México)
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
+      // Reporte semanal automático los viernes
+      if (event.cron === '0 18 * * 5') {
+        console.log('📊 Ejecutando reporte semanal...');
+        await weeklyReport(env);
+        return;
+      }
+
       const enabled = await env['bot kv'].get('bot_enabled');
       if (enabled === 'false') { console.log('🔴 Bot apagado'); return; }
 
