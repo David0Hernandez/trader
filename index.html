@@ -164,6 +164,13 @@ nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,.97);backdro
     <div class="mmsg" id="m-msg"></div>
   </div>
 </div>
+<div class="page" id="page-positions">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:16px;font-weight:700">Posiciones</div>
+    <div style="font-size:11px;color:var(--muted);font-family:var(--mono)" id="pos-count">—</div>
+  </div>
+  <div id="positions-list"></div>
+</div>
 <div class="page" id="page-trades">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div style="font-size:16px;font-weight:700">Historial</div>
@@ -218,8 +225,8 @@ nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,.97);backdro
 </main>
 <nav>
   <button class="nb active" id="nav-bot" onclick="sp('bot')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Bot</button>
+  <button class="nb" id="nav-positions" onclick="sp('positions')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Pos</button>
   <button class="nb" id="nav-trades" onclick="sp('trades')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Trades</button>
-  <button class="nb" id="nav-momentum" onclick="sp('momentum')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Rocket</button>
   <button class="nb" id="nav-health" onclick="sp('health')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Sistema</button>
   <button class="nb" id="nav-config" onclick="sp('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
 </nav>
@@ -253,7 +260,7 @@ async function syncAll(){
     const d=await post('/status-all');
     if(d.states)d.states.forEach(s=>{ALL[s.sym]=s;});
     if(d.momentum)renderMomentum(d.momentum);
-    renderDash();renderTrades();drawSpark();updManual();
+    renderDash();renderPositions();renderTrades();drawSpark();updManual();
     g('sync-lbl').textContent=new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
     g('sdot').style.cssText='background:var(--green);box-shadow:0 0 6px var(--green)';
   }catch(e){
@@ -356,6 +363,95 @@ function drawSpark(){
   g('spark-lbl').textContent=CUR==='ALL'?'Portfolio normalizado':(ALL[CUR]?.short||CUR);
   g('spark-price').textContent=price?'$'+price.toLocaleString('en-US',{maximumFractionDigits:4}):'—';
   g('spark-price').style.color=up?'var(--green)':'var(--red)';
+}
+
+function renderPositions(){
+  const list=g('positions-list');
+  if(!list)return;
+  const rows=[];
+  SYMS.forEach(c=>{
+    const s=ALL[c.sym];
+    if(!s)return;
+    const p=s.price||0;
+    // LONG abierto
+    if(s.fase==='EN_POSICION'&&s.entryPrice>0){
+      const pnl=s.qty*(p-s.entryPrice);
+      const pnlPct=((p-s.entryPrice)/s.entryPrice*100);
+      const capital=s.trades?.find(t=>t.tipo==='LONG'&&t.estado==='ABIERTA')?.capital||0;
+      const col=pnl>=0?'var(--green)':'var(--red)';
+      const dt=s.entryTime?new Date(s.entryTime).toLocaleDateString('es',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+      rows.push(`<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge bl">▲ LONG</span>
+            <span style="font-size:15px;font-weight:700;font-family:var(--mono)">${c.short}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${col}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:${col}">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ENTRADA</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">$${parseFloat(s.entryPrice).toLocaleString('en-US',{maximumFractionDigits:4})}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ACTUAL</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">${p>0?'$'+p.toLocaleString('en-US',{maximumFractionDigits:4}):'—'}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">INVERTIDO</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">$${capital.toFixed(2)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ABIERTO</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">${dt}</div>
+          </div>
+        </div>
+      </div>`);
+    }
+    // SHORT abierto
+    if(s.faseShort==='EN_SHORT'&&s.shortEntryPrice>0){
+      const pnl=s.shortQty*(s.shortEntryPrice-p);
+      const pnlPct=((s.shortEntryPrice-p)/s.shortEntryPrice*100);
+      const capital=s.trades?.find(t=>t.tipo==='SHORT'&&t.estado==='ABIERTA')?.capital||0;
+      const col=pnl>=0?'var(--green)':'var(--red)';
+      const dt=s.shortEntryTime?new Date(s.shortEntryTime).toLocaleDateString('es',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+      rows.push(`<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge bs">▼ SHORT</span>
+            <span style="font-size:15px;font-weight:700;font-family:var(--mono)">${c.short}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${col}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:${col}">${pnlPct>=0?'+':''}${pnlPct.toFixed(2)}%</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ENTRADA</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">$${parseFloat(s.shortEntryPrice).toLocaleString('en-US',{maximumFractionDigits:4})}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ACTUAL</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">${p>0?'$'+p.toLocaleString('en-US',{maximumFractionDigits:4}):'—'}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">INVERTIDO</div>
+            <div style="font-size:13px;font-weight:700;font-family:var(--mono)">$${capital.toFixed(2)}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:2px">ABIERTO</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">${dt}</div>
+          </div>
+        </div>
+      </div>`);
+    }
+  });
+  g('pos-count').textContent=rows.length+' abiertas';
+  list.innerHTML=rows.length?rows.join(''):'<div style="color:var(--muted);text-align:center;padding:40px;font-family:var(--mono);font-size:12px">Sin posiciones abiertas</div>';
 }
 
 function renderTrades(){
@@ -496,6 +592,7 @@ function connectWS(){
         ALL[sym].priceOpen=parseFloat(t.o);
         // Actualizar precio en UI sin esperar syncAll
         renderDash();
+        renderPositions();
         updManual();
         g('sync-lbl').textContent=new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       }catch(err){}
