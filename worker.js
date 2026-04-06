@@ -104,11 +104,77 @@ async function saveAllPrices(env, prices) {
 function defaultState() {
   return {
     fase: 'BUSCANDO', cash: 100, qty: 0, entryPrice: 0, entryTime: null, startingCapital: 100,
+    longMaxPrice: 0,   // para trailing stop LONG
     faseShort: 'BUSCANDO', cashShort: 100, shortQty: 0, shortEntryPrice: 0, shortEntryTime: null, startingCapitalShort: 100,
+    shortMinPrice: 0,  // para trailing stop SHORT
     trades: [], priceHistory: [], botRunCount: 0, lastUpdate: null,
-    config: { stopLoss: 6, takeProfit: 8, minScore: 55, tgEnabled: true },
+    config: { stopLoss: 6, minScore: 55, tgEnabled: true }, // takeProfit eliminado → trailing stop
     mem: { w: 0, l: 0, aw: 0, al: 0, notes: [] }
   };
+}
+
+// ── Régimen de mercado: Fear & Greed + tendencia BTC ─────────
+async function getMarketRegime(env) {
+  try {
+    const [fgRes, btcTicker] = await Promise.all([
+      fetch('https://api.alternative.me/fng/?limit=1', { signal: AbortSignal.timeout(4000) }),
+      fetchBinance('/api/v3/ticker/24hr?symbol=BTCUSDT')
+    ]);
+    const fgData = await fgRes.json();
+    const fearGreed = parseInt(fgData.data[0].value);
+    const fgLabel = fgData.data[0].value_classification;
+    const btcChange24h = parseFloat(btcTicker.priceChangePercent);
+
+    // Tendencia BTC 7 días (cacheada en KV)
+    let btcChange7d = 0;
+    try {
+      const btc7d = await fetchKlinesCached(env, 'BTCUSDT', '1d', 8);
+      const prices7d = btc7d.map(k => parseFloat(k[4]));
+      btcChange7d = (prices7d[prices7d.length-1] - prices7d[0]) / prices7d[0] * 100;
+    } catch(e) {}
+
+    // Determinar régimen
+    let regime, allowLong, allowShort;
+    if (fearGreed <= 25 || btcChange7d < -15) {
+      regime = 'MIEDO_EXTREMO'; allowLong = true; allowShort = false; // oversold → solo LONG
+    } else if (fearGreed <= 45 || btcChange7d < -7) {
+      regime = 'BAJISTA'; allowLong = false; allowShort = true;
+    } else if (fearGreed >= 80 || btcChange7d > 20) {
+      regime = 'CODICIA_EXTREMA'; allowLong = false; allowShort = true; // overbought → solo SHORT
+    } else if (fearGreed >= 60 || btcChange7d > 7) {
+      regime = 'ALCISTA'; allowLong = true; allowShort = false;
+    } else {
+      regime = 'NEUTRAL'; allowLong = true; allowShort = true;
+    }
+
+    const hour = new Date().getUTCHours();
+    const peakHours = hour >= 13 && hour <= 22; // mercado americano activo
+
+    return { fearGreed, fgLabel, btcChange24h, btcChange7d, regime, allowLong, allowShort, peakHours };
+  } catch (e) {
+    console.error('getMarketRegime error:', e.message);
+    return { fearGreed: 50, fgLabel: 'Neutral', btcChange24h: 0, btcChange7d: 0, regime: 'NEUTRAL', allowLong: true, allowShort: true, peakHours: true };
+  }
+}
+
+// ── Contar posiciones abiertas en todos los pares ────────────
+function countOpenPositions(allStates) {
+  let longs = 0, shorts = 0;
+  CRYPTOS.forEach(c => {
+    const s = allStates[c.sym];
+    if (s?.fase === 'EN_POSICION') longs++;
+    if (s?.faseShort === 'EN_SHORT') shorts++;
+  });
+  return { longs, shorts, total: longs + shorts };
+}
+
+// ── Kelly Criterion (half-Kelly para seguridad) ──────────────
+// Calcula el tamaño óptimo de posición basado en confianza de Claude
+function kellySize(confidence) {
+  const p = confidence / 100;         // probabilidad de ganar (confianza de Claude)
+  const b = 8 / 6;                    // ratio ganancia/pérdida (TP 8% / SL 6%)
+  const kelly = (b * p - (1 - p)) / b;
+  return Math.max(0.15, Math.min(0.80, kelly * 0.5)); // half-Kelly, entre 15% y 80%
 }
 
 // ── Actualizar memoria cuando cierra un trade ────────────────
@@ -140,18 +206,21 @@ function parseState(s) {
     qty: parseFloat(s.qty) || 0,
     entryPrice: parseFloat(s.entryPrice) || 0,
     entryTime: s.entryTime || null,
+    longMaxPrice: parseFloat(s.longMaxPrice) || 0,
     startingCapital: parseFloat(s.startingCapital) || d.startingCapital,
     faseShort: s.faseShort ?? d.faseShort,
     cashShort: parseFloat(s.cashShort) || d.cashShort,
     shortQty: parseFloat(s.shortQty) || 0,
     shortEntryPrice: parseFloat(s.shortEntryPrice) || 0,
     shortEntryTime: s.shortEntryTime || null,
+    shortMinPrice: parseFloat(s.shortMinPrice) || 0,
     startingCapitalShort: parseFloat(s.startingCapitalShort) || d.startingCapitalShort,
     trades: Array.isArray(s.trades) ? s.trades : [],
     priceHistory: Array.isArray(s.priceHistory) ? s.priceHistory : [],
     botRunCount: parseInt(s.botRunCount) || 0,
     lastUpdate: s.lastUpdate || null,
-    config: { ...d.config, ...(s.config || {}) }
+    config: { ...d.config, ...(s.config || {}) },
+    mem: s.mem || d.mem
   };
 }
 
@@ -277,7 +346,7 @@ function calcScore(data15m, data1h, data4h, direction = 'LONG') {
 // Solo se llama cuando hay señal matemática relevante
 // ════════════════════════════════════════════════════════════
 
-async function claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state) {
+async function claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state, regime = null) {
   if (!env.ANTHROPIC_API_KEY) return { action: 'HOLD', confidence: 0, reason: 'No API key' };
 
   const posLong = state.fase === 'EN_POSICION'
@@ -321,7 +390,13 @@ Acciones posibles:
 - SELL_SHORT: cerrar posición bajista (solo si SHORT = ABIERTO)
 - HOLD: no hacer nada
 
-Usa tu historial para mejorar decisiones: evita repetir errores y refuerza lo que funcionó.
+Contexto global del mercado:
+${regime ? `- Régimen: ${regime.regime} | Fear & Greed: ${regime.fearGreed}/100 (${regime.fgLabel})
+- BTC 24h: ${regime.btcChange24h.toFixed(2)}% | BTC 7d: ${regime.btcChange7d.toFixed(2)}%
+- Hora UTC: ${new Date().getUTCHours()}h (${regime.peakHours ? 'horario pico — mayor volumen' : 'horario bajo — menor volumen'})
+- Régimen permite: LONG=${regime.allowLong} SHORT=${regime.allowShort}` : '- Sin datos de régimen'}
+
+Usa tu historial para mejorar decisiones. Respeta el régimen de mercado.
 Responde ÚNICAMENTE con JSON válido, sin texto adicional:
 {"action":"BUY_LONG|SELL_LONG|BUY_SHORT|SELL_SHORT|HOLD","confidence":0-100,"reason":"máximo 15 palabras"}`;
 
@@ -386,9 +461,10 @@ async function fetchMarketData(env, sym) {
 // LÓGICA DEL BOT — Claude toma decisiones
 // ════════════════════════════════════════════════════════════
 
-async function processCrypto(env, crypto, allStates, prices) {
+async function processCrypto(env, crypto, allStates, prices, regime) {
   const state = parseState(allStates[crypto.sym]);
   state.botRunCount++;
+  const openPos = countOpenPositions(allStates);
 
   let market;
   try {
@@ -405,72 +481,76 @@ async function processCrypto(env, crypto, allStates, prices) {
 
   const cfg = state.config;
   const SL = cfg.stopLoss / 100;
-  const TP = cfg.takeProfit / 100;
 
   // ── Calcular scores matemáticos (pre-filtro) ─────────────
   const scoreLong  = calcScore(data15m, data1h, data4h, 'LONG');
   const scoreShort = calcScore(data15m, data1h, data4h, 'SHORT');
+  const TRAIL_ACTIVATE = 0.02; // activar trailing tras +2% ganancia
+  const TRAIL_PCT      = 0.03; // cerrar si retrocede 3% desde el máximo
 
   // ── Gestión de posición LONG abierta ─────────────────────
   if (state.fase === 'EN_POSICION') {
     const pnlPct = (price - state.entryPrice) / state.entryPrice;
+    // Actualizar máximo histórico
+    if (price > (state.longMaxPrice || 0)) state.longMaxPrice = price;
+    const fromPeak = state.longMaxPrice > 0 ? (price - state.longMaxPrice) / state.longMaxPrice : 0;
+    const gainFromEntry = (state.longMaxPrice - state.entryPrice) / state.entryPrice;
 
+    // 1) Stop Loss duro
     if (pnlPct <= -SL) {
-      // Stop Loss automático (sin consultar Claude)
       const pnl = state.qty * (price - state.entryPrice);
       state.cash += state.qty * price;
       const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'PÉRDIDA'; t.razonSalida = `Stop Loss (${(pnlPct*100).toFixed(2)}%)`; }
       updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
-      state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
+      state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.longMaxPrice = 0; state.fase = 'BUSCANDO';
       await telegram(env, `🔴 LONG STOP LOSS — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: ${(pnlPct*100).toFixed(2)}%`);
 
-    } else if (pnlPct >= TP) {
-      // Take Profit automático
+    // 2) Trailing Stop (activa tras +2%, cierra si cae 3% desde máximo)
+    } else if (gainFromEntry >= TRAIL_ACTIVATE && fromPeak <= -TRAIL_PCT) {
       const pnl = state.qty * (price - state.entryPrice);
       state.cash += state.qty * price;
       const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
-      if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Take Profit (+${(pnlPct*100).toFixed(2)}%)`; }
+      if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Trailing Stop (máx:${(gainFromEntry*100).toFixed(1)}% → ${(pnlPct*100).toFixed(1)}%)`; }
       updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
-      state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
-      await telegram(env, `🟢 LONG TAKE PROFIT — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: +${(pnlPct*100).toFixed(2)}%`);
+      state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.longMaxPrice = 0; state.fase = 'BUSCANDO';
+      await telegram(env, `📈 LONG TRAILING STOP — ${crypto.short}`, `Máximo: +${(gainFromEntry*100).toFixed(1)}% → Cerrado: +${(pnlPct*100).toFixed(1)}%\nPrecio: $${price.toFixed(4)} | P&L: +$${pnl.toFixed(2)}`);
 
     } else {
-      // Claude decide si cerrar anticipadamente
-      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state);
-      console.log(`${crypto.sym} LONG abierto — Claude: ${decision.action} (${decision.confidence}%) — ${decision.reason}`);
+      // 3) Claude decide si cerrar anticipadamente
+      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state, regime);
+      console.log(`${crypto.sym} LONG — Claude: ${decision.action} (${decision.confidence}%) — ${decision.reason}`);
       if (decision.action === 'SELL_LONG' && decision.confidence >= 60) {
         const pnl = state.qty * (price - state.entryPrice);
         state.cash += state.qty * price;
         const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
-        if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = pnl >= 0 ? 'GANANCIA' : 'PÉRDIDA'; t.razonSalida = `Claude cierre: ${decision.reason}`; }
+        if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = pnl >= 0 ? 'GANANCIA' : 'PÉRDIDA'; t.razonSalida = `Claude: ${decision.reason}`; }
         updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
-        state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
-        await telegram(env, `🤖 LONG CERRADO (Claude) — ${crypto.short}`, `${decision.reason}\nPrecio: $${price.toFixed(4)}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`);
+        state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.longMaxPrice = 0; state.fase = 'BUSCANDO';
+        await telegram(env, `🤖 LONG CERRADO — ${crypto.short}`, `${decision.reason}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)} (${(pnlPct*100).toFixed(2)}%)`);
       }
     }
 
   } else if (state.fase === 'BUSCANDO') {
-    // Solo preguntar a Claude si hay señal matemática mínima (ahorra tokens)
-    if (scoreLong.total >= 40 || scoreShort.total >= 45) {
-      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state);
-      console.log(`${crypto.sym} buscando — Claude: ${decision.action} (${decision.confidence}%) — ${decision.reason}`);
-
+    const canOpenLong = regime?.allowLong !== false && openPos.total < 4 && openPos.longs < 3;
+    if (canOpenLong && scoreLong.total >= 40) {
+      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state, regime);
+      console.log(`${crypto.sym} buscando LONG — Claude: ${decision.action} (${decision.confidence}%)`);
       if (decision.action === 'BUY_LONG' && decision.confidence >= 65) {
-        const capitalFraction = Math.min(1, (scoreLong.total - 40) / 40);
-        const capital = state.cash * (0.3 + capitalFraction * 0.5);
+        const size = kellySize(decision.confidence);
+        const capital = state.cash * size;
         const qty = capital / price;
         state.qty = qty; state.entryPrice = price; state.entryTime = new Date().toISOString();
-        state.cash -= capital; state.fase = 'EN_POSICION';
+        state.longMaxPrice = price; state.cash -= capital; state.fase = 'EN_POSICION';
         state.trades.unshift({
           id: Date.now(), tipo: 'LONG', par: crypto.short,
           precioEntrada: price, precioSalida: null, qty, capital,
           fechaEntrada: new Date().toISOString(), fechaSalida: null,
           pnl: null, pnlPct: null, estado: 'ABIERTA',
-          razonEntrada: `🤖 Claude (conf:${decision.confidence}%): ${decision.reason} | Score:${scoreLong.total}`,
+          razonEntrada: `🤖 Claude (conf:${decision.confidence}% kelly:${(size*100).toFixed(0)}%): ${decision.reason} | Score:${scoreLong.total} | F&G:${regime?.fearGreed||'?'}`,
           razonSalida: null
         });
-        await telegram(env, `🤖🟢 LONG ENTRADA — ${crypto.short}`, `Claude: ${decision.reason}\nScore: ${scoreLong.total}/100 | Capital: $${capital.toFixed(2)}\nRSI 15m: ${scoreLong.rsi15}`);
+        await telegram(env, `🤖🟢 LONG — ${crypto.short}`, `${decision.reason}\nScore:${scoreLong.total} F&G:${regime?.fearGreed||'?'} Kelly:${(size*100).toFixed(0)}% Capital:$${capital.toFixed(2)}`);
       }
     }
   }
@@ -478,27 +558,33 @@ async function processCrypto(env, crypto, allStates, prices) {
   // ── Gestión de posición SHORT abierta ────────────────────
   if (state.faseShort === 'EN_SHORT') {
     const pnlPct = (state.shortEntryPrice - price) / state.shortEntryPrice;
+    // Actualizar mínimo histórico (precio más bajo alcanzado)
+    if (!state.shortMinPrice || price < state.shortMinPrice) state.shortMinPrice = price;
+    const fromTrough = state.shortMinPrice > 0 ? (price - state.shortMinPrice) / state.shortMinPrice : 0;
+    const gainFromEntry = (state.shortEntryPrice - state.shortMinPrice) / state.shortEntryPrice;
 
+    // 1) Stop Loss duro
     if (pnlPct <= -SL) {
       const pnl = state.shortQty * (state.shortEntryPrice - price);
       state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
       const t = state.trades.find(t => t.tipo === 'SHORT' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'PÉRDIDA'; t.razonSalida = `Stop Loss Short (${(pnlPct*100).toFixed(2)}%)`; }
       updateMemory(state, 'SHORT', (pnlPct*100).toFixed(2), t?.razonEntrada);
-      state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.faseShort = 'BUSCANDO';
+      state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.shortMinPrice = 0; state.faseShort = 'BUSCANDO';
       await telegram(env, `🔴 SHORT STOP LOSS — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: ${(pnlPct*100).toFixed(2)}%`);
 
-    } else if (pnlPct >= TP) {
+    // 2) Trailing Stop SHORT (activa tras +2%, cierra si sube 3% desde mínimo)
+    } else if (gainFromEntry >= TRAIL_ACTIVATE && fromTrough >= TRAIL_PCT) {
       const pnl = state.shortQty * (state.shortEntryPrice - price);
       state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
       const t = state.trades.find(t => t.tipo === 'SHORT' && t.estado === 'ABIERTA');
-      if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Take Profit Short (+${(pnlPct*100).toFixed(2)}%)`; }
+      if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Trailing Stop Short (máx:${(gainFromEntry*100).toFixed(1)}% → ${(pnlPct*100).toFixed(1)}%)`; }
       updateMemory(state, 'SHORT', (pnlPct*100).toFixed(2), t?.razonEntrada);
-      state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.faseShort = 'BUSCANDO';
-      await telegram(env, `🟢 SHORT TAKE PROFIT — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: +${(pnlPct*100).toFixed(2)}%`);
+      state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.shortMinPrice = 0; state.faseShort = 'BUSCANDO';
+      await telegram(env, `📉 SHORT TRAILING STOP — ${crypto.short}`, `Mínimo: +${(gainFromEntry*100).toFixed(1)}% → Cerrado: +${(pnlPct*100).toFixed(1)}%\nP&L: +$${pnl.toFixed(2)}`);
 
     } else {
-      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state);
+      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state, regime);
       if (decision.action === 'SELL_SHORT' && decision.confidence >= 60) {
         const pnl = state.shortQty * (state.shortEntryPrice - price);
         state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
@@ -511,23 +597,25 @@ async function processCrypto(env, crypto, allStates, prices) {
     }
 
   } else if (state.faseShort === 'BUSCANDO') {
-    if (scoreShort.total >= 50) {
-      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state);
-      if (decision.action === 'BUY_SHORT' && decision.confidence >= 70) {
-        const capitalFraction = Math.min(1, (scoreShort.total - 50) / 35);
-        const capital = state.cashShort * (0.25 + capitalFraction * 0.45);
+    const canOpenShort = regime?.allowShort !== false && openPos.total < 4 && openPos.shorts < 3;
+    if (canOpenShort && scoreShort.total >= 40) {
+      const decision = await claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort, state, regime);
+      console.log(`${crypto.sym} buscando SHORT — Claude: ${decision.action} (${decision.confidence}%)`);
+      if (decision.action === 'BUY_SHORT' && decision.confidence >= 65) {
+        const size = kellySize(decision.confidence);
+        const capital = state.cashShort * size;
         const qty = capital / price;
         state.shortQty = qty; state.shortEntryPrice = price; state.shortEntryTime = new Date().toISOString();
-        state.cashShort -= capital; state.faseShort = 'EN_SHORT';
+        state.shortMinPrice = price; state.cashShort -= capital; state.faseShort = 'EN_SHORT';
         state.trades.unshift({
           id: Date.now()+1, tipo: 'SHORT', par: crypto.short,
           precioEntrada: price, precioSalida: null, qty, capital,
           fechaEntrada: new Date().toISOString(), fechaSalida: null,
           pnl: null, pnlPct: null, estado: 'ABIERTA',
-          razonEntrada: `🤖 Claude (conf:${decision.confidence}%): ${decision.reason} | Score:${scoreShort.total}`,
+          razonEntrada: `🤖 Claude (conf:${decision.confidence}% kelly:${(size*100).toFixed(0)}%): ${decision.reason} | Score:${scoreShort.total} | F&G:${regime?.fearGreed||'?'}`,
           razonSalida: null
         });
-        await telegram(env, `🤖🔻 SHORT ENTRADA — ${crypto.short}`, `Claude: ${decision.reason}\nScore: ${scoreShort.total}/100 | Capital: $${capital.toFixed(2)}\nRSI 15m: ${scoreShort.rsi15}`);
+        await telegram(env, `🤖🔻 SHORT — ${crypto.short}`, `${decision.reason}\nScore:${scoreShort.total} F&G:${regime?.fearGreed||'?'} Kelly:${(size*100).toFixed(0)}% Capital:$${capital.toFixed(2)}`);
       }
     }
   }
@@ -904,9 +992,13 @@ export default {
         getAllPrices(env)
       ]);
 
+      // Régimen de mercado (se calcula una sola vez para todos los pares)
+      const regime = await getMarketRegime(env);
+      console.log(`📊 Régimen: ${regime.regime} | F&G: ${regime.fearGreed} | BTC 24h: ${regime.btcChange24h.toFixed(2)}%`);
+
       // Procesar cada cripto (Claude decide)
       const results = await Promise.allSettled(
-        CRYPTOS.map(c => processCrypto(env, c, allStates, prices))
+        CRYPTOS.map(c => processCrypto(env, c, allStates, prices, regime))
       );
 
       // Actualizar estados con resultados
