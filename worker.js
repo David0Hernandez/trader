@@ -716,7 +716,7 @@ export default {
     }
 
     if (url.pathname === '/manual-trade') {
-      const { sym, action, capitalPct = 50 } = body;
+      const { sym, action, capitalPct = 50, price: clientPrice = null } = body;
       if (!sym || !action) return new Response(JSON.stringify({ ok: false, error: 'sym y action requeridos' }), { headers: cors });
 
       const [allStates, allPrices] = await Promise.all([getAllStates(env), getAllPrices(env)]);
@@ -724,6 +724,8 @@ export default {
       let price = allPrices[sym];
       const freshPrice = await fetchPrice(sym);
       if (freshPrice) { price = freshPrice; allPrices[sym] = price; }
+      // Fallback: usar precio enviado por el frontend (WebSocket) si Binance no responde
+      if ((!price || price <= 0) && clientPrice > 0) { price = clientPrice; allPrices[sym] = price; }
       if (!price || price <= 0) return new Response(JSON.stringify({ ok: false, error: 'Sin precio disponible' }), { headers: cors });
 
       const pct = Math.max(10, Math.min(100, parseFloat(capitalPct))) / 100;

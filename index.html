@@ -399,7 +399,7 @@ async function doTrade(action){
   const pct=parseInt(g('m-pct').value);const msg=g('m-msg');
   msg.textContent='⏳ Enviando orden...';msg.style.color='var(--yellow)';
   try{
-    const d=await post('/manual-trade',{sym:MSYM,action,capitalPct:pct});
+    const d=await post('/manual-trade',{sym:MSYM,action,capitalPct:pct,price:ALL[MSYM]?.price||null});
     if(d.ok){msg.textContent='✓ '+d.msg;msg.style.color='var(--green)';await syncAll();}
     else{msg.textContent='✗ '+(d.error||'Error');msg.style.color='var(--red)';}
   }catch(e){msg.textContent='✗ Sin conexión';msg.style.color='var(--red)';}
