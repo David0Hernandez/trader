@@ -258,7 +258,11 @@ document.querySelectorAll('.ctab').forEach(tab=>{
 async function syncAll(){
   try{
     const d=await post('/status-all');
-    if(d.states)d.states.forEach(s=>{ALL[s.sym]=s;});
+    if(d.states)d.states.forEach(s=>{
+      const wsPrice=ALL[s.sym]?.price; // preservar precio del WebSocket
+      ALL[s.sym]=s;
+      if(!ALL[s.sym].price && wsPrice) ALL[s.sym].price=wsPrice;
+    });
     if(d.momentum)renderMomentum(d.momentum);
     renderDash();renderPositions();renderTrades();drawSpark();updManual();
     g('sync-lbl').textContent=new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
