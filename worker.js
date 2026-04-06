@@ -1,8 +1,7 @@
 // ============================================================
-// TradeBot AI — Cloudflare Worker v6.0
-// Changes vs v5:
-//   - Batch KV saves (12 writes → 2 per cycle)
-//   - Claude AI as decision engine (replaces pure math score)
+// TradeBot AI — Cloudflare Worker v6.1
+// Changes vs v6.0:
+//   - Claude memory: aprende de trades pasados por par
 //   - $100 default capital per pair
 //   - 1h/4h kline caching (reduces Binance calls ~60%)
 //   - Momentum runs every 2 cycles
@@ -107,8 +106,29 @@ function defaultState() {
     fase: 'BUSCANDO', cash: 100, qty: 0, entryPrice: 0, entryTime: null, startingCapital: 100,
     faseShort: 'BUSCANDO', cashShort: 100, shortQty: 0, shortEntryPrice: 0, shortEntryTime: null, startingCapitalShort: 100,
     trades: [], priceHistory: [], botRunCount: 0, lastUpdate: null,
-    config: { stopLoss: 6, takeProfit: 8, minScore: 55, tgEnabled: true }
+    config: { stopLoss: 6, takeProfit: 8, minScore: 55, tgEnabled: true },
+    mem: { w: 0, l: 0, aw: 0, al: 0, notes: [] }
   };
+}
+
+// ── Actualizar memoria cuando cierra un trade ────────────────
+function updateMemory(state, tipo, pnlPct, razonEntrada) {
+  if (!state.mem) state.mem = { w: 0, l: 0, aw: 0, al: 0, notes: [] };
+  const m = state.mem;
+  const pct = parseFloat(pnlPct);
+  const win = pct >= 0;
+
+  if (win) {
+    m.aw = ((m.aw * m.w) + pct) / (m.w + 1);
+    m.w++;
+  } else {
+    m.al = ((m.al * m.l) + pct) / (m.l + 1);
+    m.l++;
+  }
+
+  // Guardar nota compacta del trade (máx 5 notas)
+  const nota = `${tipo} ${win ? '✓' : '✗'} ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%: ${(razonEntrada || '').replace(/🤖.*?:\s*/,'').slice(0, 60)}`;
+  m.notes = [nota, ...m.notes].slice(0, 5);
 }
 
 function parseState(s) {
@@ -267,11 +287,15 @@ async function claudeDecide(env, crypto, price, change24h, scoreLong, scoreShort
     ? `ABIERTO en $${state.shortEntryPrice.toFixed(4)} (P&L: ${((state.shortEntryPrice - price) / state.shortEntryPrice * 100).toFixed(2)}%)`
     : 'sin posición';
 
-  const recentTrades = (state.trades || [])
-    .filter(t => t.estado !== 'ABIERTA')
-    .slice(0, 3)
-    .map(t => `${t.tipo} ${t.estado} ${t.pnlPct ? t.pnlPct + '%' : ''}`)
-    .join(', ') || 'sin historial';
+  // Memoria de rendimiento
+  const mem = state.mem || { w: 0, l: 0, aw: 0, al: 0, notes: [] };
+  const totalTrades = mem.w + mem.l;
+  const winRate = totalTrades > 0 ? ((mem.w / totalTrades) * 100).toFixed(0) : null;
+  const memBlock = totalTrades > 0
+    ? `\nTu historial en ${crypto.short}:
+- Trades: ${totalTrades} | Win rate: ${winRate}% | Avg ganancia: +${mem.aw.toFixed(1)}% | Avg pérdida: ${mem.al.toFixed(1)}%
+- Últimas operaciones:\n${mem.notes.map(n => '  · ' + n).join('\n')}`
+    : '\nHistorial: sin trades aún (primera sesión)';
 
   const prompt = `Eres un bot de trading crypto (paper trading, capital ficticio $100/par).
 Par: ${crypto.short} | Precio: $${price.toFixed(4)} | 24h: ${change24h.toFixed(2)}%
@@ -288,7 +312,7 @@ Indicadores técnicos:
 Estado actual:
 - LONG: ${posLong}
 - SHORT: ${posShort}
-- Últimos trades: ${recentTrades}
+${memBlock}
 
 Acciones posibles:
 - BUY_LONG: abrir posición alcista (solo si LONG = sin posición)
@@ -297,6 +321,7 @@ Acciones posibles:
 - SELL_SHORT: cerrar posición bajista (solo si SHORT = ABIERTO)
 - HOLD: no hacer nada
 
+Usa tu historial para mejorar decisiones: evita repetir errores y refuerza lo que funcionó.
 Responde ÚNICAMENTE con JSON válido, sin texto adicional:
 {"action":"BUY_LONG|SELL_LONG|BUY_SHORT|SELL_SHORT|HOLD","confidence":0-100,"reason":"máximo 15 palabras"}`;
 
@@ -396,6 +421,7 @@ async function processCrypto(env, crypto, allStates, prices) {
       state.cash += state.qty * price;
       const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'PÉRDIDA'; t.razonSalida = `Stop Loss (${(pnlPct*100).toFixed(2)}%)`; }
+      updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
       state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
       await telegram(env, `🔴 LONG STOP LOSS — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: ${(pnlPct*100).toFixed(2)}%`);
 
@@ -405,6 +431,7 @@ async function processCrypto(env, crypto, allStates, prices) {
       state.cash += state.qty * price;
       const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Take Profit (+${(pnlPct*100).toFixed(2)}%)`; }
+      updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
       state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
       await telegram(env, `🟢 LONG TAKE PROFIT — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: +${(pnlPct*100).toFixed(2)}%`);
 
@@ -417,6 +444,7 @@ async function processCrypto(env, crypto, allStates, prices) {
         state.cash += state.qty * price;
         const t = state.trades.find(t => t.tipo === 'LONG' && t.estado === 'ABIERTA');
         if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = pnl >= 0 ? 'GANANCIA' : 'PÉRDIDA'; t.razonSalida = `Claude cierre: ${decision.reason}`; }
+        updateMemory(state, 'LONG', (pnlPct*100).toFixed(2), t?.razonEntrada);
         state.qty = 0; state.entryPrice = 0; state.entryTime = null; state.fase = 'BUSCANDO';
         await telegram(env, `🤖 LONG CERRADO (Claude) — ${crypto.short}`, `${decision.reason}\nPrecio: $${price.toFixed(4)}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`);
       }
@@ -456,6 +484,7 @@ async function processCrypto(env, crypto, allStates, prices) {
       state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
       const t = state.trades.find(t => t.tipo === 'SHORT' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'PÉRDIDA'; t.razonSalida = `Stop Loss Short (${(pnlPct*100).toFixed(2)}%)`; }
+      updateMemory(state, 'SHORT', (pnlPct*100).toFixed(2), t?.razonEntrada);
       state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.faseShort = 'BUSCANDO';
       await telegram(env, `🔴 SHORT STOP LOSS — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: ${(pnlPct*100).toFixed(2)}%`);
 
@@ -464,6 +493,7 @@ async function processCrypto(env, crypto, allStates, prices) {
       state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
       const t = state.trades.find(t => t.tipo === 'SHORT' && t.estado === 'ABIERTA');
       if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = 'GANANCIA'; t.razonSalida = `Take Profit Short (+${(pnlPct*100).toFixed(2)}%)`; }
+      updateMemory(state, 'SHORT', (pnlPct*100).toFixed(2), t?.razonEntrada);
       state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.faseShort = 'BUSCANDO';
       await telegram(env, `🟢 SHORT TAKE PROFIT — ${crypto.short}`, `Precio: $${price.toFixed(4)}\nP&L: +${(pnlPct*100).toFixed(2)}%`);
 
@@ -474,6 +504,7 @@ async function processCrypto(env, crypto, allStates, prices) {
         state.cashShort += state.shortQty * state.shortEntryPrice + pnl;
         const t = state.trades.find(t => t.tipo === 'SHORT' && t.estado === 'ABIERTA');
         if (t) { t.precioSalida = price; t.fechaSalida = new Date().toISOString(); t.pnl = pnl; t.pnlPct = (pnlPct*100).toFixed(2); t.estado = pnl >= 0 ? 'GANANCIA' : 'PÉRDIDA'; t.razonSalida = `Claude cierre short: ${decision.reason}`; }
+        updateMemory(state, 'SHORT', (pnlPct*100).toFixed(2), t?.razonEntrada);
         state.shortQty = 0; state.shortEntryPrice = 0; state.shortEntryTime = null; state.faseShort = 'BUSCANDO';
         await telegram(env, `🤖 SHORT CERRADO (Claude) — ${crypto.short}`, `${decision.reason}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`);
       }
