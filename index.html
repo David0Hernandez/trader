@@ -397,9 +397,19 @@ function updManual(){
 
 async function doTrade(action){
   const pct=parseInt(g('m-pct').value);const msg=g('m-msg');
-  msg.textContent='⏳ Enviando orden...';msg.style.color='var(--yellow)';
+  msg.textContent='⏳ Obteniendo precio...';msg.style.color='var(--yellow)';
   try{
-    const d=await post('/manual-trade',{sym:MSYM,action,capitalPct:pct,price:ALL[MSYM]?.price||null});
+    // Precio del WS; si no hay, lo busca directo en Binance
+    let price=ALL[MSYM]?.price||null;
+    if(!price){
+      try{
+        const r=await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${MSYM}`);
+        const d=await r.json();
+        price=parseFloat(d.price)||null;
+      }catch(e){}
+    }
+    msg.textContent='⏳ Enviando orden...';
+    const d=await post('/manual-trade',{sym:MSYM,action,capitalPct:pct,price});
     if(d.ok){msg.textContent='✓ '+d.msg;msg.style.color='var(--green)';await syncAll();}
     else{msg.textContent='✗ '+(d.error||'Error');msg.style.color='var(--red)';}
   }catch(e){msg.textContent='✗ Sin conexión';msg.style.color='var(--red)';}
