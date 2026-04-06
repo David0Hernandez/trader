@@ -703,11 +703,25 @@ export default {
     }
 
     if (url.pathname === '/status-all') {
-      // Solo 2 KV reads en vez de 13
       const [allStates, prices] = await Promise.all([
         getAllStates(env),
         getAllPrices(env)
       ]);
+      // Buscar precios faltantes desde Binance y cachearlos
+      const missing = CRYPTOS.filter(c => !prices[c.sym] || prices[c.sym] <= 0);
+      if (missing.length > 0) {
+        const fetched = await Promise.allSettled(
+          missing.map(async c => ({ sym: c.sym, price: await fetchPrice(c.sym) }))
+        );
+        let updated = false;
+        fetched.forEach(r => {
+          if (r.status === 'fulfilled' && r.value.price > 0) {
+            prices[r.value.sym] = r.value.price;
+            updated = true;
+          }
+        });
+        if (updated) await saveAllPrices(env, prices);
+      }
       const states = CRYPTOS.map(c => {
         const s = parseState(allStates[c.sym]);
         return { sym: c.sym, short: c.short, name: c.name, price: prices[c.sym] || null, ...s };
